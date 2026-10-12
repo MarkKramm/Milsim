@@ -55,6 +55,7 @@ Pick by what you need:
 |---|---|
 | `AGENTS.md` | Continuing work with a coding assistant. |
 | `docs/STATUS_HANDOFF.md` | Asking another model for opinions or new ideas. Self-contained. |
+| `docs/QUESTIONS_FOR_REVIEW.md` | **Asking another model to actually think about the design.** Send with the handoff. |
 | `docs/STATUS_HANDOFF.md` §3–§5 | Only, if context is tight. The highest-value sections. |
 | `docs/PROJECT_SUMMARY.md` | A quick orientation rather than a full briefing. |
 
@@ -73,6 +74,7 @@ propose things that were already considered and rejected.
 | Change | Update |
 |---|---|
 | A design decision is made or reversed | `LOCKED_DECISIONS.md`, then `AGENTS.md` |
+| Another assistant answers `QUESTIONS_FOR_REVIEW.md` | `OPEN_QUESTIONS_FOR_REVIEW.md`, then act on it |
 | The build moves to a new stage | `ROADMAP.md`, `PROJECT_SUMMARY.md`, `AGENTS.md` checkpoint |
 | A new system is designed | `LONG_TERM_DESIGN.md` |
 | An architectural rule changes | `ARCHITECTURE.md`, then `AGENTS.md` |

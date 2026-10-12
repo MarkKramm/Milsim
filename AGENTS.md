@@ -174,6 +174,7 @@ of a change plainly; do not silently alter scope.
 | `docs/LONG_TERM_DESIGN.md` | The full game, designed |
 | `docs/STATUS_HANDOFF.md` | The same checkpoint, written for a different model |
 | `docs/WORKING_AGREEMENT.md` | Where docs live, how to sync them, when to update what |
+| `docs/QUESTIONS_FOR_REVIEW.md` | Open design questions put to another assistant |
 | `docs/GAME_VISION.md` | Vision and design pillars |
 | `docs/CORE_LOOP.md` | The repeating gameplay loop |
 | `docs/PROTOTYPE_SPEC.md` | First prototype scope, acceptance criteria |

@@ -170,6 +170,10 @@ the first commit — but the *gameplay systems* follow the gates.
 
 ## 9. What would be most useful from another assistant
 
+**Read `QUESTIONS_FOR_REVIEW.md` first.** It contains 20 open questions this
+project wants answered, ranked by importance, including an explicit invitation
+to argue against the design (Q3).
+
 - **Build Stage 1 exactly as specified.** It is small and deliberately so.
 - **Critique whether a gate is genuinely met** rather than assuming it. The
   greatest risk to this project is advancing past a stage that is not yet fun.
@@ -180,6 +184,9 @@ the first commit — but the *gameplay systems* follow the gates.
   deliberately.
 - **Add new ideas to a clearly labelled parking lot** rather than into the
   active design.
+- **Be direct.** A confident disagreement with a stated cost is far more useful
+  than a polite non-answer. Nothing here is sacred — but nothing changes on a
+  hunch either.
 
 ---
 

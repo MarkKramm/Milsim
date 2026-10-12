@@ -54,9 +54,8 @@ Pick by what you need:
 | File | Send when |
 |---|---|
 | `AGENTS.md` | Continuing work with a coding assistant. |
-| `docs/STATUS_HANDOFF.md` | Asking another model for opinions or new ideas. Self-contained. |
-| `docs/QUESTIONS_FOR_REVIEW.md` | **Asking another model to actually think about the design.** Send with the handoff. |
-| `docs/STATUS_HANDOFF.md` §3–§5 | Only, if context is tight. The highest-value sections. |
+| `docs/REVIEW_BRIEF.md` | **Asking another model for opinions or ideas.** Fully self-contained — project context, all decisions, architecture, roadmap, risks, and 20 open questions in one file. Send this and nothing else. |
+| `docs/REVIEW_BRIEF.md` §3, §5, §9 | Only, if context is tight. Decisions, roadmap, and questions. |
 | `docs/PROJECT_SUMMARY.md` | A quick orientation rather than a full briefing. |
 
 Send the **file**, not a summary of it. A model reasoning from the actual
@@ -74,11 +73,11 @@ propose things that were already considered and rejected.
 | Change | Update |
 |---|---|
 | A design decision is made or reversed | `LOCKED_DECISIONS.md`, then `AGENTS.md` |
-| Another assistant answers `QUESTIONS_FOR_REVIEW.md` | `OPEN_QUESTIONS_FOR_REVIEW.md`, then act on it |
+| Another assistant answers Part 9 of `REVIEW_BRIEF.md` | `docs/REVIEW_REPLIES.md`, then act on it |
 | The build moves to a new stage | `ROADMAP.md`, `PROJECT_SUMMARY.md`, `AGENTS.md` checkpoint |
 | A new system is designed | `LONG_TERM_DESIGN.md` |
 | An architectural rule changes | `ARCHITECTURE.md`, then `AGENTS.md` |
-| You want outside input | `STATUS_HANDOFF.md` |
+| You want outside input | `REVIEW_BRIEF.md` |
 | Code structure changes | `README.md` layout section |
 
 **Update `AGENTS.md` in the same session.** It is the checkpoint file. A stale

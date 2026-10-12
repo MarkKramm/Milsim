@@ -49,6 +49,8 @@ Read in this order if you are new:
 | `ARCHITECTURE.md` | How it is built, and the rules that must hold |
 | `ROADMAP.md` | Build order and gates |
 | `AUDIT_AND_RECOMMENDATIONS.md` | Critical review of the original plan |
+| `REVIEW_BRIEF.md` | **The single file to send another assistant** — context, decisions, roadmap, risks, and 20 questions |
+| `REVIEW_REPLIES.md` | Answers received from other assistants |
 | `DECISIONS_TO_APPROVE.md` | The questions, with recommendations |
 | `DECISIONS_ANSWERED.md` | The player's actual answers |
 | `PROTOTYPE_SPEC.md` | First prototype scope and acceptance criteria |

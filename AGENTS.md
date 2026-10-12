@@ -172,9 +172,9 @@ of a change plainly; do not silently alter scope.
 | `docs/ROADMAP.md` | Build order and gates |
 | `docs/ARCHITECTURE.md` | Technical foundation, tick order, state shape |
 | `docs/LONG_TERM_DESIGN.md` | The full game, designed |
-| `docs/STATUS_HANDOFF.md` | The same checkpoint, written for a different model |
+| `docs/REVIEW_BRIEF.md` | **The one file to send another assistant** — self-contained context, decisions, roadmap, risks, and 20 open questions |
+| `docs/REVIEW_REPLIES.md` | Answers received from another assistant |
 | `docs/WORKING_AGREEMENT.md` | Where docs live, how to sync them, when to update what |
-| `docs/QUESTIONS_FOR_REVIEW.md` | Open design questions put to another assistant |
 | `docs/GAME_VISION.md` | Vision and design pillars |
 | `docs/CORE_LOOP.md` | The repeating gameplay loop |
 | `docs/PROTOTYPE_SPEC.md` | First prototype scope, acceptance criteria |
@@ -187,8 +187,10 @@ of a change plainly; do not silently alter scope.
 
 ## If you are ChatGPT or another assistant
 
-You can be given `docs/STATUS_HANDOFF.md` instead of this file — it contains the
-same checkpoint written to be model-agnostic. The most useful contributions:
+You can be given `docs/REVIEW_BRIEF.md` instead of this file. It is fully
+self-contained: project context, all locked decisions, architecture, roadmap,
+known risks, and 20 open questions to answer. Send that one file and nothing
+else. The most useful contributions:
 
 - Build Stage 1 exactly as specified.
 - Critique whether a gate is genuinely met, rather than assuming it is.

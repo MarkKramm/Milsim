@@ -61,7 +61,7 @@ Full map in `docs/PROJECT_SUMMARY.md`. The essentials:
 | `ROADMAP.md` | Build order and gates |
 | `ARCHITECTURE.md` | Technical foundation |
 | `LONG_TERM_DESIGN.md` | What the full game eventually becomes |
-| `STATUS_HANDOFF.md` | Self-contained brief for another assistant |
+| `REVIEW_BRIEF.md` | **The one file to send another assistant** — self-contained, includes 20 open questions |
 
 ---
 

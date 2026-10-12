@@ -28,10 +28,11 @@ Everything else is downstream of that.
 
 | | |
 |---|---|
-| **Phase** | Planning complete. Implementation not started. |
+| **Phase** | Blueprint complete. Implementation not started. |
 | **Code written** | None |
-| **Documents** | Complete — vision through architecture |
+| **Documents** | Complete — blueprint, dependencies, architecture, roadmap |
 | **Next action** | Stage 1: a simulation that ticks |
+| **External reviews** | Two, both acted upon |
 
 ---
 
@@ -49,9 +50,11 @@ Read in this order if you are new:
 | `ARCHITECTURE.md` | How it is built, and the rules that must hold |
 | `ROADMAP.md` | Build order and gates |
 | `AUDIT_AND_RECOMMENDATIONS.md` | Critical review of the original plan |
-| `REVIEW_BRIEF.md` | **The single file to send another assistant** — full history, decisions, roadmap, risks, and 10 open questions |
-| `REVIEW_REPLIES.md` | The external review, and what we accepted or declined |
-| `OPEN_QUESTIONS.md` | Genuinely unresolved questions |
+| `REVIEW_BRIEF.md` | **The single file to send another assistant** — full checkpoint |
+| `GAME_DESIGN_BLUEPRINT.md` | **The system atlas** — every system specified |
+| `SYSTEM_DEPENDENCIES.md` | Ownership, tick order, cross-system chains, invariants |
+| `REVIEW_REPLIES.md` | Both external reviews, and what was accepted or declined |
+| `OPEN_QUESTIONS.md` | Every open question, its status, and the stage that answers it |
 | `ORIGINAL_PLANNING_PACK.md` | The original superseded documents, preserved for audit |
 | `DECISIONS_TO_APPROVE.md` | The questions, with recommendations |
 | `DECISIONS_ANSWERED.md` | The player's actual answers |

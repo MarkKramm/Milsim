@@ -58,11 +58,13 @@ Full map in `docs/PROJECT_SUMMARY.md`. The essentials:
 |---|---|
 | `PROJECT_SUMMARY.md` | **Start here** — orientation and status |
 | `LOCKED_DECISIONS.md` | The settled design decisions, with corrections from external review |
-| `OPEN_QUESTIONS.md` | Genuinely unresolved questions |
+| `OPEN_QUESTIONS.md` | Every open question, its status, and the stage that answers it |
 | `ROADMAP.md` | Build order and gates |
 | `ARCHITECTURE.md` | Technical foundation |
 | `LONG_TERM_DESIGN.md` | What the full game eventually becomes |
-| `REVIEW_BRIEF.md` | **The one file to send another assistant** — self-contained, includes 10 open questions |
+| `REVIEW_BRIEF.md` | **The one file to send another assistant** — self-contained |
+| `GAME_DESIGN_BLUEPRINT.md` | The system atlas — every system specified |
+| `SYSTEM_DEPENDENCIES.md` | Ownership, tick order, cross-system chains, invariants | |
 
 ---
 

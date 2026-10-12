@@ -112,9 +112,20 @@ changes nothing about determinism.
 
 ### 4.1 Readiness is derived, never an input
 
-Corrected after external review. Readiness is **not** a magic meter that drifts
-on its own. It is recomputed each tick from observable underlying state, and it
-is **never** an input to any other system — it only summarises and reports.
+Corrected after external review — twice. The first correction made it derived
+rather than a magic meter. The second resolved a contradiction: it is **both**
+derived *and* incapable of affecting anything, because the underlying
+conditions rule and readiness only explains them.
+
+**Readiness summarises. It does not rule.** No system may read
+`state.readiness`. The consequences of neglect are driven by fatigue, hunger,
+injury, and workload — the conditions it aggregates. A person declines a hard
+task because their fatigue crossed a threshold, not because a summary number
+crossed one.
+
+This is an architectural rule with teeth: if any system ever reads
+`state.readiness`, that is a bug, because it would make tuning the summary
+require re-tuning the world.
 
 ```ts
 interface ReadinessBreakdown {
@@ -127,10 +138,14 @@ interface ReadinessBreakdown {
 The player must always be able to see *why* it moved. If readiness is presented
 without its contributors, the feature has failed regardless of what it does.
 
+**It may be cut entirely.** If it adds no information beyond hunger and fatigue
+(which it may well not), deleting it costs one panel. That is the point of making
+it a summary.
+
 **Legitimate rest is not idleness.** Readiness must not fall while someone is
 recovering from work. Only *unproductive* idleness — awake, capable of work, and
-not recovering — counts against the base. Penalising rest is a design bug, not
-a difficulty setting.
+not recovering — counts against the base. Penalising rest is a design bug, not a
+difficulty setting.
 
 ### 4.2 Player intent is a design concept, not a UI control
 

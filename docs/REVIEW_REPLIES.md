@@ -131,6 +131,90 @@ stage where they start to matter.
 
 ---
 
+## Review 2 — ChatGPT
+
+**Date received:** after Review 1's corrections were applied.
+**Reviewer:** ChatGPT, given the updated `REVIEW_BRIEF.md`.
+**Overall verdict:** *"The foundation is good. The game design is not finished
+yet."*
+
+### What it asked for
+
+A **System Atlas** — every major intended system specified deeply enough that
+another developer could implement it without rediscovering the design, using an
+eleven-section template. Plus a system dependency map, a revised roadmap with
+per-stage gates, and a long-term gameplay structure.
+
+It also supplied a blueprint prompt to run against this assistant.
+
+### What it found — and what it was right about
+
+**Three of its catches were real contradictions in the plan as it stood.** Two
+were errors this assistant had introduced while applying Review 1's own advice.
+
+| Problem | Severity | Resolution |
+|---|---|---|
+| **Readiness contradicted itself.** It was "never an input to any other system" *and* drove a progression of consequences. Both cannot be true. | **Real contradiction, self-inflicted** | Split. Readiness is a pure explanatory summary that **no system may read**. Behavioural consequences are driven by the underlying conditions — fatigue, injury, neglect. A person declines hard work because their fatigue crossed a threshold, not because a summary number did. Now an enforced invariant (#12). |
+| **Stage 2's gate was unanswerable.** It demanded evidence that "a decision visibly changed what happened next", but the named-option decision system did not arrive until Stage 4. | **Real contradiction** | Stage 2 now includes *one player priority*, and its gate asks the question it can actually answer. Stage 4 tests the harder version of the same question. |
+| **Stage 6 vs Stage 7 ambiguity.** Stage 6 said "choose by evidence"; Stage 7 then assumed production was already chosen. The evidence gate controlled nothing. | **Real ambiguity** | Stage 6 is now explicitly *a decision, not a build*. Stages 7–10 are marked conditional throughout, with the leading candidate named and its rationale given. |
+
+**Three gaps it identified correctly:**
+
+- **Commitments sat outside the roadmap.** They were the answer to the
+  long-term-purpose question but had no stage. Now at Stage 5, deliberately
+  *ahead* of achievements — achievements reward a good experience, commitments
+  create the reason to have one.
+- **Several systems had no stage at all.** Hydration, morale, injuries,
+  equipment inspection, ammunition, vehicles. Now assigned in the blueprint's
+  system → stage appendix, including which are conditional.
+- **Gates were applied uniformly.** Corrected: each stage now names the question
+  it can answer *at its own scale*.
+
+**Its strongest structural contribution:** the **system dependency map**
+(`SYSTEM_DEPENDENCIES.md`), with ownership rules, tier ordering, tick-order
+justifications, the two contested ordering decisions written out with their
+rationale and required tests, 15 invariants, and a table of circular-dependency
+traps.
+
+**Its framing of "locked" was adopted earlier** and is preserved: decisions are
+*settled*, not *locked*.
+
+### What it did not get, or over-reached on
+
+**It recommended this blueprint pass before Stage 1, twice.** This time the
+recommendation was accepted — but only because it arrived as a bounded
+deliverable with a specified template, and only after Review 1 had already
+established the gate-discipline argument. The distinguishing factor is that
+this pass produced *documentation*, whereas indefinite planning produces
+*deferral*. The line drawn: if a further planning pass cannot be specified in
+advance with a completion criterion, it is drift and should be refused.
+
+**It proposed a ten-stage roadmap.** Adopted with one disagreement recorded in
+the blueprint: Stage 10 (combat) remains **open, not provisional**. The reviewer
+treated combat as a likely eventual stage; this project treats it as a system
+that may never exist, because a game whose threat is external cannot justify its
+own simulation if the simulation is not already worth watching.
+
+### Deliverables produced
+
+| File | What it contains |
+|---|---|
+| `GAME_DESIGN_BLUEPRINT.md` | The System Atlas — 20 systems, each with 11 sections, plus status labels and the system → stage map |
+| `SYSTEM_DEPENDENCIES.md` | Ownership, tiers, tick order, 5 cross-system chains, 15 invariants, dependency traps, debugging order |
+| `OPEN_QUESTIONS.md` | Rewritten — every question grouped by the stage that answers it, with status and deciding evidence |
+| `ROADMAP.md` | 10 stages, conditional ones marked, per-stage gates, questions passed forward |
+| `ARCHITECTURE.md` | §4.1 readiness rule rewritten; invariants reordered |
+| `LOCKED_DECISIONS.md` | D1 rewritten to resolve the contradiction |
+
+### What did not change
+
+The architecture, the stack, the pure-simulation rule, seeded determinism, the
+gate discipline, and the sequencing discipline (design everything, build in
+evidence order). Nothing in Review 2 touched them, which is the outcome a
+correct architecture produces under review.
+
+---
+
 ## Reviews
 
-*(one review received — see above)*
+*(two received — see above)*

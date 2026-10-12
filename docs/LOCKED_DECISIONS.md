@@ -44,18 +44,41 @@ demanding shift is doing exactly what the base needs. Readiness must not fall
 during legitimate recovery — only *unproductive* idleness counts against the
 base.
 
-**3. Graduated consequences, not a cliff.** Zero readiness no longer means an
-immediate irreversible departure. Instead:
+**3. Readiness summarises; it does not rule.** *(Corrected after the second
+external review, which caught a contradiction in the previous version of this
+document.)*
 
-1. **Warning** — a visible flag on the person and in the report.
-2. **Reduced effectiveness** — slower work, higher chance of minor failure.
-3. **Declines demanding work** — will not take exhausting tasks.
-4. **Refuses optional assignments** — declines extra shifts and favours.
-5. **Leaves** — only after sustained neglect at the bottom.
+The previous wording said readiness "is never an input to any other system"
+while also describing a progression of consequences driven by readiness. Those
+cannot both be true. The resolution:
 
-This preserves the stakes while giving the player a chance to see and respond.
-An instant, irreversible loss is the kind of thing that makes a simulation feel
-unfair rather than demanding.
+> **Readiness is an explanatory summary only.** It is never read by any other
+> system and never causes anything.
+>
+> **Behavioural consequences are driven by the underlying conditions** that
+> readiness happens to summarise — fatigue, hunger, injury, workload, sustained
+> neglect.
+
+A person declines a demanding task because their **fatigue is high**, not
+because readiness is low. Readiness is the panel that lets the player see that
+several conditions are stacking up. The number explains; the conditions rule.
+
+This matters practically: if readiness were causal, tuning it would require
+re-tuning every system that read it. As a pure summary, it can be removed at any
+time without touching the world.
+
+**The consequence ladder, and what actually triggers each step:**
+
+| Step | Trigger (the real cause) | Readiness's role |
+|---|---|---|
+| 1. Warning flag | sustained high fatigue or missed meals | shows *why* |
+| 2. Reduced effectiveness | fatigue above a work threshold | shows *why* |
+| 3. Declines demanding work | fatigue or injury above a hard threshold | shows *why* |
+| 4. Refuses optional assignments | prolonged neglect — repeated refusals, no rest | shows *why* |
+| 5. Leaves | sustained neglect over many in-game days | shows *why* |
+
+Every threshold is a tunable constant on the underlying condition, not on the
+summary.
 
 Injuries remain a later layer (`LONG_TERM_DESIGN.md` §3).
 

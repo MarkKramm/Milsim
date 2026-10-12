@@ -14,14 +14,16 @@ they are synced, and when each must be updated.
 
 ## Checkpoint
 
-**Last updated:** after the first external review. No code has been written yet.
+**Last updated:** after two external reviews and a completed system blueprint.
+No code has been written yet.
 
 | | |
 |---|---|
 | **Phase** | Planning complete, implementation not started |
 | **Code** | None. Only empty directories and a `.gitignore` |
 | **Git** | Local commits only, nothing pushed |
-| **External review** | One received, audited, corrections applied |
+| **External review** | Two received, audited, corrections applied |
+| **Blueprint** | Complete - all systems specified, dependencies mapped |
 | **Next action** | Stage 1 — a simulation that ticks |
 | **Blocked on** | Nothing. Stage 1 can begin immediately |
 
@@ -50,10 +52,12 @@ They are called **settled**, not locked: the developer approved most by trusting
 a recommendation rather than by item-by-item confirmation, so any can be
 revisited. See the note at the top of that file.
 
-One external review has already been completed and its corrections applied —
-see `docs/REVIEW_REPLIES.md`. It found several genuine errors in this plan,
-including two that have since been fixed (readiness penalising legitimate rest,
-and readiness being a magic meter). Do not reintroduce them.
+Two external reviews have been completed and their corrections applied - see
+`docs/REVIEW_REPLIES.md`. Between them they found five genuine errors in this
+plan, three of them contradictions introduced while fixing the first review.
+Do not reintroduce them. The most important: **readiness is a pure summary that
+no system may read** - the underlying conditions drive behaviour. Enforced as
+invariant 12 in `SYSTEM_DEPENDENCIES.md`.
 
 1. **Stakes:** a "readiness" value drifts down when people are hungry, tired, or
    idle; at zero, people quit. Injuries are a later layer.
@@ -184,11 +188,13 @@ of a change plainly; do not silently alter scope.
 | `docs/LOCKED_DECISIONS.md` | The full decision set with rationale, including corrections from external review |
 | `docs/OPEN_QUESTIONS.md` | Genuinely unresolved questions — Q16–Q25 raised by the external review |
 | `docs/ORIGINAL_PLANNING_PACK.md` | The original, superseded planning documents, preserved for audit |
+| `docs/GAME_DESIGN_BLUEPRINT.md` | **The system atlas** - every system specified, 11 sections each |
+| `docs/SYSTEM_DEPENDENCIES.md` | Who owns what, tick order, cross-system chains, invariants |
 | `docs/ROADMAP.md` | Build order and evidence-based gates |
 | `docs/ARCHITECTURE.md` | Technical foundation, tick order, state shape |
 | `docs/LONG_TERM_DESIGN.md` | The full game, designed |
 | `docs/REVIEW_BRIEF.md` | **The one file to send another assistant** — self-contained: history, decisions, architecture, roadmap, risks, 10 open questions, and the full record of the review already completed |
-| `docs/REVIEW_REPLIES.md` | The external review, what was accepted, what was declined, and why |
+| `docs/REVIEW_REPLIES.md` | Both external reviews, what was accepted, what was declined, and why |
 | `docs/WORKING_AGREEMENT.md` | Where docs live, how to sync them, when to update what |
 | `docs/GAME_VISION.md` | Vision and design pillars |
 | `docs/CORE_LOOP.md` | The repeating gameplay loop |

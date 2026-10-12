@@ -4,8 +4,11 @@
 tells you where things stand and what to do next. Read it first, then
 `docs/PROJECT_SUMMARY.md`, then `docs/ROADMAP.md`.**
 
-Model-agnostic. Assumes no prior conversation, no particular tooling, and no
-knowledge of who worked on this before.
+**Model-agnostic. Assumes no prior conversation, no particular tooling, and no
+knowledge of who worked on this before.**
+
+Also read `docs/WORKING_AGREEMENT.md` — it explains where documents live, how
+they are synced, and when each must be updated.
 
 ---
 
@@ -84,6 +87,7 @@ feature work, the architecture has broken — fix that first.
 military-base-sim-dev/
   AGENTS.md               <- you are here
   README.md
+  WORKING_AGREEMENT.md    <- how docs are maintained, synced, and shared
   .gitignore
   docs/                   all planning documents
   src/
@@ -164,11 +168,12 @@ of a change plainly; do not silently alter scope.
 |---|---|
 | `AGENTS.md` | This file — continuation brief |
 | `docs/PROJECT_SUMMARY.md` | One-page orientation |
-| `docs/LOCKED_DECISIONS.md` | The 12 decisions above, with rationale |
+| `docs/LOCKED_DECISIONS.md` | The full set of 18 locked decisions (D1–D20) with rationale — the list above is a condensed 12-point version of it |
 | `docs/ROADMAP.md` | Build order and gates |
 | `docs/ARCHITECTURE.md` | Technical foundation, tick order, state shape |
 | `docs/LONG_TERM_DESIGN.md` | The full game, designed |
 | `docs/STATUS_HANDOFF.md` | The same checkpoint, written for a different model |
+| `docs/WORKING_AGREEMENT.md` | Where docs live, how to sync them, when to update what |
 | `docs/GAME_VISION.md` | Vision and design pillars |
 | `docs/CORE_LOOP.md` | The repeating gameplay loop |
 | `docs/PROTOTYPE_SPEC.md` | First prototype scope, acceptance criteria |

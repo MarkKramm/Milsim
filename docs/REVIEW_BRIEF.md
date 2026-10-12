@@ -1,24 +1,35 @@
-# Military Base Simulator — Review Brief
+# Military Base Simulator — Complete Project Brief
 
-**A complete, self-contained brief for another AI assistant to review.**
+**Everything about this project in one file.**
 
-You are being asked to think hard about this game design and answer the
-questions in **Part 9**. Everything you need is in this one file — you do not
-need access to the project, its other documents, or any prior conversation.
+This is the single file to send another AI assistant. It is self-contained: no
+other document needs to be read, and no prior conversation is assumed.
 
-You may also be asked to help *build* it. Parts 1–8 give you everything needed
-to start Stage 1 correctly.
+It has been reviewed externally once already. That review's findings, what we
+accepted, and what we declined are recorded in **Part 12** — including the
+points where the reviewer was right and the earlier version of this plan was
+wrong.
 
 ---
 
-## Part 0 — How to read this
+## Contents
 
-This document is written to be model-agnostic. It assumes no particular tool,
-no particular workflow, and no knowledge of who worked on this before.
-
-The design is settled. **Do not re-litigate the settled decisions** unless you
-can show a specific failure mode and state what the change costs. Disagreeing is
-welcome — silently rewriting the scope is not.
+| Part | Subject |
+|---|---|
+| 1 | What this game is |
+| 2 | Full history — everything that has happened |
+| 3 | Current status |
+| 4 | Design pillars and the core loop |
+| 5 | The 20 original decisions and what was decided |
+| 6 | Architecture |
+| 7 | Roadmap with evidence-based gates |
+| 8 | Long-term design |
+| 9 | Why the ambitious systems are not built yet |
+| 10 | Risks |
+| 11 | **Open questions we want answered** |
+| 12 | External review: what was accepted and what was declined |
+| 13 | Environment and repo |
+| 14 | How to help |
 
 ---
 
@@ -32,171 +43,428 @@ matters.
 The player never micromanages. They observe, understand why things happen, and
 make a small number of meaningful choices.
 
-**The one question the whole prototype exists to answer:**
-
-> Is it enjoyable to watch a small autonomous base operate, understand why things
-> happen, and occasionally change a policy?
-
 **Tone:** calm, systemic, observational — with genuine stakes. Think Dwarf
-Fortress or Kingdom Come in spirit, but far smaller in scope.
+Fortress or RimWorld in spirit, but far smaller in scope.
 
 **Explicitly not:** a clicker, a micromanager, an optimisation puzzle, a combat
 game, or an infinite sandbox.
 
+The developer's original interest was in a base where personnel and equipment are
+**deeply inspectable** — soldiers, weapons, gear condition, vehicles. That
+interest is honoured in the long-term design, but deliberately late.
+
 ---
 
-## Part 2 — Where the project stands
+## Part 2 — Full history
+
+Everything that has happened, in order. This part exists because the previous
+version of this brief compressed history into a few bullets and reviewers
+correctly reported that it gave them no sense of what had actually taken place.
+
+### 2.1 The original planning pack
+
+Before this planning phase, a set of planning documents was produced by an
+earlier assistant. It was explicitly scoped as planning-only, with no code. It
+contained: a master prompt, game vision, core loop, prototype spec, foundation
+decisions, implementation stages, and open questions.
+
+That pack's full text is preserved in `docs/ORIGINAL_PLANNING_PACK.md`.
+
+**Its stated scope boundary was strict.** It instructed itself not to write
+code, run builds, design weapon catalogues, design campaigns or raids in
+detail, or force a framework choice. It followed that boundary, and its
+discipline was genuinely good.
+
+**What it got right:** the vision, the autonomy-first principle, the idea that
+reports must summarise recorded events rather than invent causes, and the
+insistence on protecting scope.
+
+### 2.2 The audit
+
+That pack was then audited. The finding: **it described a simulation rather than
+a game.**
+
+Specifically, it had, by design:
+
+- **No stakes.** Nothing bad could happen permanently. If a soldier starved,
+  nothing was lost — hunger was a number that wiggles.
+- **No goal.** No reason to want Tuesday instead of Monday.
+- **No failure.** No way to lose.
+
+A simulation where nothing can be lost is a screensaver you are permitted to
+press stop on.
+
+Two further gaps were identified:
+
+- **Player agency reduced to sliders.** The stated player actions were setting
+  priorities and allocating resources. Sliders are the weakest form of agency
+  in a simulation game, because the player cannot predict the effect and
+  therefore never feels responsible for the outcome.
+- **The "boring day" question was asked and never answered.** The original pack
+  listed "what makes a normal day interesting when nothing dramatic happens?" as
+  an open question — which is 95% of what the player would ever see.
+
+The pack was judged good in quality and incomplete in coverage. It was **not**
+sent back for a rewrite.
+
+### 2.3 The decision round
+
+Twenty design decisions were put to the developer with a marked recommendation
+for each, on the assumption that approval-by-recommendation was acceptable and
+that anything disagreed with would be flagged.
+
+The developer approved nearly every recommendation, and in several places said
+"up to you."
+
+They also **asked for more**: hydration, morale, injuries, a factory/production
+layer, engines, vehicles, relationships, achievements, secrets, a larger
+roadmap, and a stronger architectural foundation — and explicitly asked not to
+build Stage 1 and 2 as throwaway minimums, but to establish something strong
+immediately.
+
+They also asked for the project to be documented well enough that **another
+agent could continue it** if interrupted. That request produced the checkpoint
+file and the working agreement.
+
+### 2.4 The response to that request
+
+Accepted in full, with one documented exception.
+
+**Agreed:** all the requested systems were designed on paper — needs ladder,
+injuries, production chains, engines, fuel, vehicles, relationships, secrets,
+achievements — plus a complete architecture and a full roadmap, all written
+before any code.
+
+**Declined, with reasons in Part 9:** building those systems *first*. The
+reasoning is that in a simulation, the interesting systems cannot be designed
+until the boring ones are proven interesting, and nobody has yet confirmed that
+watching six people eat, rest, and work is entertaining.
+
+**A nuance discovered later:** the developer's request was partly about the
+*architecture*, not the gameplay. That part was agreed to fully — the pure
+simulation module, seeded RNG, JSON state, and event log are not throwaways and
+are built to from the first commit. Only the gameplay systems follow the gates.
+
+### 2.5 A correction to the record
+
+During the decision round, the documents began calling decisions "locked."
+
+An external review later challenged this, correctly: the developer approved most
+of them **by trusting the recommendation wholesale, not by examining each one
+individually.** Calling them locked overstated the level of genuine agreement.
+
+The terminology was changed to **settled**, with an explicit note that any of
+them can be revisited at any time. See Part 5.
+
+### 2.6 Tooling and environment problems solved
+
+- The project was originally extracted into Termux's private directory, which
+  Android's scoped storage hides from every other app — so no editor could open
+  the files. Moved to shared storage for reading.
+- A permanent split was then adopted: **documentation mirrored to shared
+  storage** for phone reading, **code kept in Termux home** where `node_modules`
+  is fast and file watching works. Shared storage is a FUSE mount where a dev
+  server behaves badly.
+- A git repository was initialised locally. Nothing is pushed anywhere.
+
+### 2.7 The first external review
+
+The consolidated brief was sent to another AI assistant, which returned a
+long, largely favourable review. It answered all twenty questions, challenged
+twelve decisions, and identified several genuine design errors.
+
+**It was right about several things**, including two errors in the earlier plan.
+Those corrections are now part of the design and are recorded in Part 12.
+
+It recommended **not starting Stage 1** until the original documents were
+audited and four design questions were settled. That recommendation was
+declined, for reasons also in Part 12.
+
+---
+
+## Part 3 — Current status
 
 | | |
 |---|---|
 | **Phase** | Planning complete, implementation not started |
-| **Code written** | None |
-| **Git** | Local commits only, nothing pushed |
+| **Code written** | None. Only empty directories and a `.gitignore` |
+| **Git** | Local commits only. Nothing pushed |
+| **External reviews** | One received and acted upon |
 | **Next action** | Stage 1 — a simulation that ticks |
-
-**What has happened so far:**
-
-1. An original planning pack was produced (vision, core loop, prototype spec,
-   foundation decisions, stages, open questions). It was explicitly scoped as
-   planning-only.
-2. That pack was **audited** and found to be good in quality but incomplete in
-   coverage: it described a *simulation* rather than a *game* — no stakes, no
-   goal, no failure, and player agency reduced to sliders.
-3. Twenty design decisions were put to the developer with recommendations. They
-   approved nearly all, and additionally requested that hydration, morale,
-   injuries, a factory/production layer, engines, vehicles, relationships,
-   achievements, and secrets all be **designed in advance**.
-4. Those were accepted and fully documented, then **sequenced** rather than
-   built first, for reasons in Part 7.
-5. No code has been written.
+| **Blocked on** | Nothing |
 
 ---
 
-## Part 3 — Settled decisions
+## Part 4 — Design pillars and the core loop
 
-**Locked. Do not re-open without strong reason.**
+### Pillars
 
-| # | Decision | Rationale |
+1. **Autonomy first** — personnel have useful default behaviour and operate
+   without constant orders.
+2. **Readable simulation** — the player can discover what each person is doing,
+   what they need, and why a task was delayed or failed.
+3. **Depth through interaction** — a few connected systems beat many
+   disconnected features.
+4. **Persistent world** — people, equipment, and stockpiles retain state.
+5. **Stories from simulation** — reports summarise events that actually
+   happened; they never invent causes the simulation did not track.
+6. **Expandable content** — later systems extend established rules.
+
+### The loop
+
+1. **Observe** — personnel, queues, needs, supplies, problems.
+2. **Set policy** — a small number of priorities or assignments.
+3. **Simulate** — personnel act on needs, duties, resources, conditions.
+4. **Resolve interactions** — jobs consume and produce; shortages propagate.
+5. **Decide** — resolve one queued situation with named options.
+6. **Explain** — the timeline and report show what happened and why.
+7. **Adjust** — change policy, observe the next period.
+
+The chain must arise from implemented rules, never from a scripted story.
+
+**Example chain:** a worker is assigned to maintenance → that occupies them →
+a delivery is late → food production drops → a meal slot is missed → someone's
+schedule shifts → the report records the actual chain and the state changes.
+
+---
+
+## Part 5 — Decisions
+
+### 5.1 What "settled" means
+
+These decisions reflect a real recommendation that was accepted in good faith.
+They have **not** all been individually examined and confirmed. Any can be
+revisited, and changing one now is far cheaper than after it is built.
+
+### 5.2 The twelve operative decisions
+
+1. **Stakes — readiness spine.** Readiness is a **derived summary**, recomputed
+   each tick from observable state and never an input to any other system. It
+   only summarises and reports, and always displays why it moved.
+   Consequences are **graduated**: warning → reduced effectiveness → declines
+   demanding work → refuses optional assignments → *then* leaves.
+   **Legitimate rest is not idleness** — readiness does not fall while someone
+   is recovering from work.
+2. **Agency — named-option decisions.** A few times a day, a concrete situation
+   with 2–3 named options. Each option protects a different priority, and each
+   has a credible benefit and a credible cost. They queue in the report and
+   rarely interrupt.
+3. **Player intent is a design concept, not a UI control.** Intent is
+   first-class simulation data. The interface is only one way to set it. An
+   intent whose effect cannot be observed is a dead control.
+4. **Normal days — hybrid anomalies.** Authored anomaly *rules*, gated by
+   simulation eligibility, selected by seeded RNG, with consequences recorded.
+   An anomaly must change a decision, reveal a risk, create a story, or inform —
+   never merely make the log look busy.
+5. **Pacing — ~3 real minutes per in-game day.** 1 tick = 1 in-game minute;
+   1440 ticks/day; 8 ticks/sec at 1×. Speeds: pause / 1× / 4× / 16×.
+   **Simulation rate is decoupled from render rate** — eight ticks per second
+   does not mean eight UI repaints per second.
+6. **Abstract time display.** "Day 3 — Afternoon". No live clock.
+7. **No dithering — hysteresis.** Workers finish or explicitly abandon a task;
+   abandoning forfeits progress.
+8. **Pressure — time-based first,** drifting toward people-based. Raids and war
+   deferred.
+9. **Stack — TypeScript + Vite + React,** played in a phone browser. The
+   developer already runs this exact stack.
+10. **Save/load early, via constraint.** The entire state must be plain
+    JSON-serializable from the start; the save UI waits for Stage 3.
+11. **Layout — panels only.** No grid, no map, no spatial navigation.
+12. **No deadline.** Ordering enforced by gates, not dates.
+
+### 5.3 Scope is sequenced, not banned
+
+| Feature | Status | Unlocks after |
 |---|---|---|
-| 1 | **Soft failure spine.** A "readiness" value drifts down when people are hungry, tired, or idle; up when fed, rested, working. At zero, people **quit**. | Gives the sim stakes for ~30 lines of code. A sim where nothing is lost is a screensaver. |
-| 2 | **Named-option decisions.** A few times a day, a concrete situation with 2–3 specific options and a visible cost to each. Queued in the report; rarely interrupting. | The difference between a sim and a game. Sliders give weak agency because their effects are unpredictable. |
-| 3 | **Rule-generated anomalies.** Normal days are made interesting by small system-generated irregularities — never scripted story beats. | A normal day is 95% of what the player sees. |
-| 4 | **Pacing: ~3 real minutes per in-game day.** 1 tick = 1 in-game minute; 1440 ticks/day; 8 ticks/sec at 1×. Speeds: pause / 1× / 4× / 16×. | Deliberately easy to change — one constant. To be validated by playing. |
-| 5 | **Abstract time display.** "Day 3 — Afternoon". No live clock. | A fast-ticking clock foregrounds a number the player cannot affect. |
-| 6 | **Hysteresis on task selection.** Workers finish or explicitly abandon a task; abandoning forfeits some progress. | Prevents dithering. Must exist from day one; retrofitting means rewriting every job rule. |
-| 7 | **Time-based pressure**, drifting toward people-based. External pressure (raids) deferred. | Cheapest pressure that creates consequence. External pressure is the most expensive to build and the most likely to derail the project. |
-| 8 | **Stack: TypeScript + Vite + React.** | The developer already runs this exact stack successfully in another project. |
-| 9 | **Simulation is a pure module.** No UI imports, no DOM, runnable headless. | The most important architectural rule. Makes the game testable, reproducible, saveable, debuggable. |
-| 10 | **Seeded randomness from tick zero.** One RNG function, no `Math.random()` in simulation, UI never draws from the sim stream. | Cannot be retrofitted cheaply. Enables exact reproduction of any run. |
-| 11 | **Panels only.** No grid, no map, no spatial navigation. | Can be added later if it earns its place. |
-| 12 | **Phone-first.** Vite dev server in Termux, played in the phone browser. | Target device constraint that keeps panels honest. |
-| 13 | **Needs ladder.** Hunger + fatigue first; then hydration, then morale, then injuries — one at a time. | Each added need multiplies tuning interactions. |
-| 14 | **Scope is sequenced, not banned.** Combat, vehicles, factions, hiring, pathfinding, animation are all parked with defined unlock points. | Full design is documented now; implementation order protects the core. |
-| 15 | **Save/load early, via constraint.** Entire state must be plain JSON-serializable from the start; the save UI waits for Stage 3. | Gives cross-session playtesting on a phone without compromising the architecture. |
-| 16 | **Interrupts are rare.** Queued decisions are the norm; true pauses budgeted to roughly one per in-game day. | Respects the developer's dislike of interruption while preserving agency. |
-| 17 | **God view, occasional interference.** No avatar; meaningful rare intervention points. | Pure observation is a screensaver. |
-| 18 | **No deadline.** Passion project. Ordering enforced by gates, not deadlines. | Without a deadline the risk is drift, not rushing. |
+| Combat, raids, enemy AI | parked | core loop proven fun |
+| Vehicles, fuel | parked | factory layer works |
+| Weapon customization | parked | equipment condition exists |
+| Faction warfare, campaigns | parked | first base is enjoyable |
+| Pathfinding | parked | grid is proven necessary |
+| Animation, 3D | parked | text UI fails to convey state |
+| Recruitment, hiring, skill trees | parked | people decline or leave |
+| Detailed equipment inspection | parked | underlying data matters |
 
 ---
 
-## Part 4 — Architecture
+## Part 6 — Architecture
 
-- **Three layers**, dependencies pointing downward only: **UI → Controller →
-  Simulation**.
-- **One authoritative state object**, plain JSON only — no classes, functions,
-  `Map`, `Set`, or `Date`. This constraint is what makes saves cheap.
-- **Fixed deterministic tick order:** clock → queued decisions → needs →
-  facilities/equipment → job selection → job progress → resource changes →
-  readiness → emit events → check for new decisions.
-- **Events:** every meaningful state change appends an event with subject IDs
-  and cause event IDs. **Reports read the log and never recompute** — this makes
-  "the report is accurate" true by construction rather than by discipline.
-- **Decisions** are data, not UI. Each has options, cause event IDs, and a
-  `blocking` flag (true only for rare interrupts). A headless script can answer
-  them programmatically, which is how decision balance gets tuned without a
-  human.
-- **Headless runner** (`tools/headless.ts`) executes N ticks with no UI. It is
-  the enforcement mechanism for the pure-simulation rule and must keep working.
-- **Testing:** invariant tests (no negative resources, no stuck loops), golden
-  runs on a fixed seed, headless smoke test.
-- **Layout:**
-  ```
-  src/sim/        PURE simulation. No UI, no DOM. The only place rules live.
-  src/ui/         React components. No rules.
-  src/controller/ clock, speed, command dispatch
-  tools/          headless.ts
-  ```
+### 6.1 The rule that governs everything
 
-**The rule that governs everything:** if a React component contains a rule
-about how the world works, that is a bug.
+> **The simulation contains no UI code.** `src/sim/**` must not import React or
+> the DOM. If a React component contains a rule about how the world works, that
+> is a bug.
 
----
+Enforced by a headless runner that executes N ticks with no browser. It must
+keep working forever. If it ever has to be stubbed to make a feature work, the
+architecture has broken — fix that first.
 
-## Part 5 — Roadmap
+### 6.2 Layering
 
-Each stage has a **gate** — an observation or a feeling, not a feature list. You
-may not advance until the gate is genuinely met.
+```
+UI (React)          reads state, sends commands. No rules, no randomness.
+Controller          owns the clock, speed, pause, command dispatch
+Simulation (pure)   state → state + events. Deterministic given a seed.
+```
 
-| Stage | Content | Gate |
+Dependencies point downward only.
+
+### 6.3 State
+
+One authoritative object. **Plain JSON only** — no classes, functions, `Map`,
+`Set`, or `Date`. This constraint is what makes saves cheap.
+
+### 6.4 Tick order
+
+Fixed and deterministic:
+
+1. Advance clock
+2. Apply queued player decisions
+3. Apply player intent to priority resolution
+4. Update needs
+5. Update facilities and equipment
+6. Run job selection (with hysteresis)
+7. Advance in-progress job progress
+8. Apply resource consumption and production
+9. Recompute readiness as a derived summary
+10. Emit events for anything notable
+11. Check for new decisions or interrupts
+
+**The order itself introduces biases and must be tested, not assumed.** Two
+cases to cover from day one: resource consumption vs. delivery arrival, and
+need updates vs. job selection.
+
+### 6.5 Randomness
+
+One seeded stream, one function. Never `Math.random()` in simulation. The UI
+never draws from the simulation stream — rendering must not shift the random
+sequence or replay breaks. The seed is displayed so runs can be reproduced.
+
+### 6.6 Events, tiers, and reports
+
+Every meaningful change appends an event with subject IDs and cause event IDs.
+**Reports read the log and never recompute**, which makes "the report is
+accurate" true by construction.
+
+Every event carries a significance tier:
+
+| Tier | Example | In the report? |
 |---|---|---|
-| 0 | Planning documents | ✅ Complete |
-| 1 | Tick loop, seeded RNG, clock, minimal UI, headless runner. **No people, jobs, or needs.** | The numbers move and you understand them |
-| 2 | 6–8 people, 3 jobs, autonomous selection with visible reasons | **Watching them work is interesting** |
-| 3 | Hunger + fatigue, supply interaction, readiness spine, save/load | **Something can be lost, and you felt it** |
-| 4 | Named-option decisions, report, timeline, debug view, minimal relationships | You made a choice and understood its effect |
-| 5 | Anomalies, run history, secrets, achievements | **You want to play day 5** |
-| 6 | Exactly one expansion layer, chosen by evidence | Chosen by what Stage 5 revealed |
-| 7 | Production layer: engines, fuel, workshop, supply chain | The bottleneck is people, not throughput |
-| 8 | External layer: vehicles, then operations | Parked |
+| `routine` | "hunger rose by 0.2" | Never shown |
+| `notable` | "Bakary completed the repair" | Summarised |
+| `critical` | "Amina collapsed during the repair" | Prominent, with causes |
 
-**Needs ladder** runs alongside, in order: hunger + fatigue (Stage 3) →
-hydration → morale → injuries. Each gated on the previous being *felt*, not
-merely present.
+The rule: *a person becoming slightly more tired is not a report entry; a person
+becoming too exhausted to finish a critical repair is.*
+
+Reports work in three layers — **current state**, **notable events**, and
+**causal explanation** — and only the third is expensive, built for `notable`
+and `critical` events only.
+
+**Do not build an event-sourcing framework.** A typed append-only list with
+causal references is enough. Needing a framework is a signal the design has
+outgrown its own log.
+
+### 6.7 Decisions as data
+
+A pending decision has options, cause event IDs, and a `blocking` flag (true
+only for rare interrupts). A headless script can answer them programmatically —
+which is how decision balance gets tuned without a human in the loop.
+
+### 6.8 Testing, in priority order
+
+1. **Invariant tests — the primary suite.** No negative resources, no infinite
+   loops, nobody starves while food is in storage, readiness never falls during
+   legitimate rest, nobody holds two jobs at once. These survive balance changes.
+2. **Headless smoke test.**
+3. **Tick-order bias tests** for the two named cases.
+4. **Golden runs — deliberately small.** A few seeds producing a short digest, not
+   a full transcript. Large golden files break on every inconsequential change and
+   get abandoned.
+
+Invariant tests first, golden runs second. Exact-output testing is a maintenance
+trap in a game whose balance is expected to change constantly.
 
 ---
 
-## Part 6 — The long-term design, in brief
+## Part 7 — Roadmap
 
-Everything below is fully designed on paper and deliberately not built yet.
+Each stage has a **gate** and now requires **observable evidence** to pass. You
+cannot pass a gate by completing the feature list.
 
-**Needs.** Hunger and fatigue first. Hydration adds a supply line rather than a
-number. Morale is derived from observable state (food security, rest, workload,
-injuries, recent events) so it is always explainable — never a standalone mood
-value. Injuries are individual, persistent, and caused by the player's own
-choices rather than random punishment, which is what makes them dramatic rather
-than unfair.
+For each gameplay stage, you must be able to say yes to **at least three** of
+these four:
+
+1. You can explain what happened **without reading the source code.**
+2. You noticed something **before** the report told you.
+3. A decision **visibly changed** what happened next.
+4. You **continued past novelty** wearing off.
+
+| Stage | Content | Gate | Evidence |
+|---|---|---|---|
+| 0 | Planning documents | ✅ Complete | — |
+| 1 | Tick loop, seeded RNG, clock, minimal UI, headless runner. **No people, jobs, or needs.** | Numbers move and you understand them | **Technical only** |
+| 2 | 6–8 people, 3 jobs, autonomous selection with visible reasons | **Watching them work is interesting** | 3 of 4 |
+| 3 | Hunger + fatigue, supply interaction, readiness spine, save/load | **Something can be lost, and you felt it** | 3 of 4 |
+| 4 | Named-option decisions, report, timeline, debug view, relationships | You made a choice and understood its effect | 3 of 4 |
+| 5 | Anomalies, run history, secrets, achievements | **You want to play day 5** | 3 of 4 |
+| 6 | Exactly one expansion layer, chosen by evidence | Chosen by what Stage 5 revealed | — |
+| 7 | Production layer: engines, fuel, workshop, supply chain | The bottleneck is people, not throughput | — |
+| 8 | External layer: vehicles, operations | Parked | — |
+
+**Stage 2 is the easiest gate to fake** — six people working is cute, and
+cuteness feels like fun. The honest test is evidence item 4.
+
+**Stage 1 has a technical gate only.** A clock and changing numbers cannot prove
+that watching personnel is fun, because there are no personnel. That is
+deliberate, not a gap.
+
+---
+
+## Part 8 — Long-term design
+
+Fully designed, deliberately not built.
+
+**Needs ladder.** Hunger and fatigue first. Hydration adds a supply line rather
+than a number. Morale is derived from observable state so it is always
+explainable — and must contribute something hunger and fatigue do not already
+represent. Injuries are individual, persistent, and caused by the player's own
+choices rather than random punishment.
 
 **Production layer.** Engines consume fuel and wear out. A workshop consumes raw
-materials. Repairs versus manufacture is a real tradeoff. Deliveries arrive on a
-schedule that is imperfect — late, partial, occasionally wrong — generated by
-rules, not scripted. Storage capacity forces decisions about what to keep. The
-design intent: the base becomes a small production system whose bottlenecks are
-*people*, not machines. That is the game's identity — a factory game where the
-factory workers are characters. **The trap:** the moment players start solving
-it as a throughput puzzle rather than a management story, the game has changed
-genre.
+materials. Repair versus manufacture is a real tradeoff. Deliveries arrive on an
+imperfect schedule — late, partial, occasionally wrong — generated by rules.
+Storage capacity forces decisions. **Work leaves persistent results:** a
+completed repair changes the actual condition of a specific item.
 
-**Vehicles.** Consume fuel, need maintenance, need a driver, and go where you
-send them. The natural bridge to the external layer, because a vehicle can leave
-and not come back.
+The design intent: a small production system whose bottlenecks are *people*.
+The trap: the moment players solve it as a throughput puzzle, the game has
+changed genre.
 
-**Relationships.** People who repeatedly work together accumulate a small
-opinion of each other. Deliberately simple: a value per pair, plus a threshold
-that surfaces one line in the report. No dialogue trees. This is a *reporting*
-layer first — it makes the event log read as human rather than mechanical.
+**Vehicles.** Consume fuel, need maintenance, need a driver, and can leave and
+not come back. The natural bridge to the external layer.
 
-**Continuity after loss.** A run leaves a permanent record: who served how long,
-what happened, how it ended. Plus secrets (rare, rule-generated, high narrative
-weight) and achievements (long-horizon, persisting across runs). These make a
-collapsed base still worth something, and make the game replayable.
+**Relationships.** A value per pair, surfacing one line in the report. No
+dialogue trees. **Must have at least one observable consequence** — two people
+who repeatedly work together cooperate better, or coordinate worse — or the
+feature is decorative.
 
-**External layer** (raids, enemy AI, operations, faction warfare) is parked
-indefinitely. Its purpose: make accumulated state matter. A raid is only
-interesting if there is something to lose.
+**Making a named person matter.** A record of what they contributed, what
+problems they faced, who they work with, and what the base would lose without
+them. No portraits, no personality simulation, no dialogue.
+
+**Continuity after loss.** Permanent run history, secrets, achievements — so a
+collapsed base is still worth something and the game is replayable.
+
+**Commitments and preparation.** Something to prepare *for*, without constant
+emergencies. A candidate answer to the long-term-purpose question.
+
+**External layer.** Parked indefinitely. Its purpose: make accumulated state
+matter.
 
 ---
 
-## Part 7 — Why the ambitious systems are not built first
+## Part 9 — Why the ambitious systems are not built yet
 
 The developer asked for the factory layer, engines, vehicles, morale, injuries,
 relationships, achievements and secrets to be built upfront. All are designed.
@@ -208,276 +476,229 @@ They are sequenced rather than built first, for one reason:
 > around an unverified assumption and would very likely be rebuilt once the base
 > simulation revealed its actual feel.
 
-The compromise accepted: **the architecture is fully designed now and built to
-from the first commit** — the pure-simulation rule, seeded RNG, JSON state, and
-event log are not throwaways. Only the *gameplay systems* follow the gates.
+**The compromise accepted:** the architecture is fully designed now and built to
+from the first commit. The pure simulation rule, seeded RNG, JSON state, event
+tiers, and intent layer are not throwaways. Only the *gameplay systems* follow
+the gates.
 
-This is a sequencing judgement, not a rejection of the request.
+**A secondary reason:** Stage 1 is a clock and some numbers. It cannot be
+invalidated by a design change later, so there is nothing to gain by waiting.
 
 ---
 
-## Part 8 — Known risks
+## Part 10 — Risks
 
 1. **Watching may not be fun without pressure** — fatal if unaddressed.
-   Mitigated by the readiness spine and named-option decisions.
-2. **The player may have nothing meaningful to do** — fatal if unaddressed.
-   Mitigated by queued decisions.
+2. **The player may be informed but not responsible.** Showing someone a report
+   does not make them feel ownership. This was identified externally and is
+   arguably the deepest risk in the design.
 3. **Drift is the most likely failure mode.** No deadline means months can go
-   into systems that were never played. The gates are the defense.
+   into systems that were never played. Gates are the defense — and gates
+   written as feelings are easy to fake, which is why they now require evidence.
 4. **The production layer could swallow the game's identity**, turning a people
-   simulator into a throughput puzzle. The clearest risk in the long-term plan.
-5. **Morale is easy to implement badly** — should be derived from observable
-   state, never a standalone value.
-6. **Too many needs dilute each other** — hence the ladder.
-7. **Deciding fun by assumption.** The gates are the only defense, and they are
-   easy to lie to yourself about.
+   simulator into a throughput puzzle.
+5. **Morale is easy to build badly** — either redundant with existing needs, or
+   an unexplainable mood bar.
+6. **Readiness may add nothing** if it merely restates hunger and fatigue.
+7. **Too many needs dilute each other.**
+8. **Deciding fun by assumption.**
 
 ---
 
-## Part 9 — Questions we want answered
+## Part 11 — Open questions
 
-Answer as many as you can, starting from Q1. If you disagree with a locked
-decision, say what the change costs.
+Ten questions, ranked. Answer as many as you can, starting from Q16.
 
-Format your reply as:
+### Q16. What is the long-term purpose? — *the most important open question*
 
-```
-### Q<n>. <question, abbreviated>
-**Short answer:** ...
-**Detail:** reasoning, tradeoffs, what you would do differently.
-**What we would change:**
-**What we would keep:**
-**Confidence:** high / medium / speculative
-```
+Nothing defines what a successful run looks like. Without it, Day 5 is only
+worth reaching because it exists.
 
----
+Candidates: keep an outpost operational through a hard period; restore a
+neglected base; prepare for an assignment; fulfil recurring commitments; build
+and improve; deliberately unstructured emergent survival.
 
-### Q1. The pacing number is a guess. What is it likely wrong about?
+**We are deliberately not answering this yet** — the right answer depends on how
+the base simulation actually feels, which nobody knows. Due before Stage 5.
 
-Locked at: 1 tick = 1 in-game minute, 1440 ticks/day, 8 ticks/sec at 1× → an
-in-game day is ~3 real minutes. Speeds: pause / 1× / 4× / 16×. Chosen without
-evidence; nobody has played it.
+### Q17. How does the player express intent?
 
-- What is the likely failure mode — too fast, too slow, or right length but
-  wrong rhythm?
-- Should needs change on a timescale of hours or something faster, given a
-  3-minute day?
-- Is "same speed all day" right, or should speed vary by time of day?
-- What would you expect to be the most *tedious* number on screen?
+Partially answered: intent is first-class data. Still open — which intent types
+first (priority, reserve, policy)? How many before the player stops reading
+them? Can intents contradict, and how is that resolved?
 
-Why it matters: if pacing is wrong, every later judgement about whether the
-game is interesting is measured against a broken instrument.
+### Q18. What happens when the player faces an unfixable problem?
 
----
+A good simulation sometimes forces an unwinnable position. Without warning,
+response, or room to recover, that feels unfair rather than demanding.
 
-### Q2. Does the readiness spine create stakes, or just noise?
+The player should understand what went wrong, what capability remains, which
+options reduce damage, and which consequences are already unavoidable. Not every
+bad outcome must be preventable — the test is whether the player can **learn**.
 
-A single value drifting down when people are hungry/tired/idle, up when
-fed/rested/working. At zero, people quit.
+How much warning is too much? A game that always warns has no tension.
 
-- Does one aggregate number create drama, or is it another bar to watch?
-- How often should it move before it stops being meaningful?
-- Is quitting the right consequence, or too blunt? What else could a person do
-  when morale collapses that is worse than leaving?
-- Could this produce a death spiral where one quit makes the next more likely —
-  and is that interesting or just a collapse?
+### Q19. How does the game avoid repeating itself?
 
----
+Ten state-dependent events may beat a hundred unrelated ones. What is the honest
+maximum run length before repetition becomes painful?
 
-### Q3. What is the strongest argument against this entire design?
+### Q20. What should we refuse to build, ever?
 
-Not the weakest. The **strongest**.
+Nominated traps: stats that never change a decision; micromanaging routines;
+disasters with no traceable cause; production chains that make people
+interchangeable; endless content compensating for a weak core; polish before the
+simulation is engaging.
 
-- What is the most likely reason this game ends up boring despite everything
-  being designed correctly?
-- Which single feature, implemented well, would still leave the game hollow?
-- What game is this one mistake away from turning into, and how would we notice
-  too late?
+And one genuine temptation here: **detailed equipment inspection.** That was the
+developer's original interest, and a screen showing every weapon component is not
+automatically fun. Equipment detail should matter because it affects
+reliability, logistics, or a specific person's story.
 
-This project has been audited repeatedly by friendly readers. A hostile review is
-worth more now than another affirming one.
+### Q21. Is readiness adding anything, or just duplicating hunger and fatigue?
 
----
+Now that it is a derived summary, the sharper question applies. If it is computed
+from hunger, fatigue, and workload, what does it tell the player that those
+three do not? If the honest answer is "not much", it should be cut.
 
-### Q4. Is "watch a small autonomous base" a real genre with known design laws?
+### Q22. How should rest be distinguished from idleness?
 
-The appeal is watching understandable systems interact, in the spirit of Dwarf
-Fortress, but much smaller.
+Accepted as a correction, but the mechanism is open: does current activity
+determine it? Is there a cost to resting when the base needs you? Can the player
+farm good outcomes by deliberate rest — and is that interesting?
 
-- What separates sims people love from sims people abandon, in design terms
-  rather than feature terms?
-- Is there prior art we should study that we have not mentioned?
-- What is the single most common mistake in this genre that we are currently
-  walking into?
+### Q23. What makes someone leave, versus merely unhappy?
 
----
+The consequence ladder replaced instant quitting. Open: what severity is right
+for sustained neglect? Is anyone ever unrecoverably lost, or can the base always
+rebuild its staff? Should a departure be permanent?
 
-### Q5. Anomalies, without content
+### Q24. How many distinct intents before the player stops reading them?
 
-We want normal days interesting via small rule-generated irregularities — a tool
-runs hot, a delivery is late, two people need the same thing. Never scripted.
+The intent layer risks recreating the slider problem in a new place. Is there a
+natural ceiling? Should some intents have defaults? How do we surface "your
+intent is being ignored" without punishing normal play?
 
-- What makes an anomaly *readable* without a narrative voice?
-- Individually authored (fixed pool chosen by sim state) or genuinely emergent?
-- How do we generate interesting anomalies without a content designer?
-- Risk: this becomes noise the player learns to ignore. How to avoid that?
+### Q25. What is the first prototype's single most important question?
 
----
+We have always asked *"is watching an autonomous base interesting?"* External
+review proposed a sharper version:
 
-### Q6. Decisions without dialogue
+> Can the player anticipate a problem, make a meaningful intervention, and later
+> recognise the consequences of that intervention?
 
-Player decisions are 2–3 concrete named options with visible costs, shown as text
-in a report.
+Is that the better question for Stage 2? Is it answerable at Stage 2's scale,
+or does it need the decision system from Stage 4? If only answerable at Stage 4,
+should Stages 2 and 3 merge?
 
-- How do we write options that feel like genuine tradeoffs rather than
-  obviously-correct answers?
-- How much should the game explain its reasoning — fully transparent, or partly
-  opaque?
-- Is text-only enough, or will it need supporting visuals to land emotionally?
+**Add your own questions as Q26+** if you see something we have missed.
 
 ---
 
-### Q7. Relationships, kept cheap
+## Part 12 — The external review
 
-Pairwise opinions surfacing as one-line report entries. No dialogue trees.
+One review has been received. Full record in `docs/REVIEW_REPLIES.md`.
 
-- Is that enough to create attachment, or does it read as decorative?
-- What is the cheapest way to make a *specific named person* matter to a player
-  who does not control them?
-- Any failure modes to avoid?
+**Its verdict:** *"The foundation is strong. The game design is not fully
+proven."*
 
----
+### 12.1 What it got right that we had not
 
-### Q8. Morale, the need most likely to be built badly
+Two of its observations improved the plan more than anything we had produced:
 
-Planned after hydration. Intent: derive from observable state (food security,
-rest, workload, injuries) so it is always explainable; never a standalone mood.
+1. **Our gates were the weakest part of our own plan.** We wrote them in the
+   language of feelings and never asked how they could be lied to. Now every
+   gameplay gate requires four observable evidence items, of which three must
+   hold.
 
-- Right call, or is a partly-opaque morale more interesting?
-- What is the common way morale systems fail?
+2. **"Informed" is not "responsible."** The original plan assumed showing
+   someone a report would make them feel ownership. It does not.
 
----
+### 12.2 Errors of ours it caught
 
-### Q9. The pure-simulation rule — is it the right architecture?
+| Error | Correction |
+|---|---|
+| Readiness penalised **all** idleness, including necessary rest | Legitimate rest is explicitly separated from unproductive idleness |
+| Readiness was a **magic meter** drifting on its own | Recomputed each tick from observable state; never an input; always shows its contributors |
+| Zero readiness meant an **immediate irreversible departure** | Graduated ladder: warning → reduced effectiveness → declines demanding work → refuses assignments → *then* leaves |
+| Player intent existed **only as UI sliders** | Intent is now first-class simulation data with its own section in the architecture |
+| Anomalies were "generated, not scripted" with no control strategy | Hybrid: authored rules, sim-gated eligibility, seeded selection, recorded consequences |
+| Events were "meaningful changes" with no significance model | Three tiers, assigned by explicit rule |
+| Testing led with golden runs | Invariant tests lead; golden runs small and few |
+| Render rate implicitly matched tick rate | Decoupled; the UI coalesces ticks |
+| Tick order treated as obviously correct | Explicitly a source of bias, with named tests |
+| Decisions were called "locked" though approved by trust | Renamed "settled," with an explicit revisitable note |
 
-Constraint: `src/sim` has no UI imports, is a pure function of state, runnable
-headless, all randomness from one seeded stream, all state plain JSON.
+### 12.3 What it proposed that we accepted but have not scheduled
 
-- What does this rule cost in normal development? What breaks first?
-- Is immutable state with events the right model, or would a mutable simulation
-  with undo be more practical?
-- Any concrete failure mode to design against now?
+Five mechanics, recorded for later evaluation. None blocks any stage:
 
----
+1. **Bottlenecks that create stories** — a shortage affects *specific* people and
+   jobs, not a total. One missing part delays a repair; the delay forces a
+   choice. Deep without adding combat, maps, or graphics.
+2. **Personnel identity and history** — so attachment forms without control.
+3. **Work leaving persistent results** — a repair changes a real item's condition.
+   This is what makes the production layer honest rather than decorative.
+4. **Commitments and preparation** — now a candidate answer to Q16.
+5. **A useful inspection interface** — deferred, but aligned with the
+   developer's original interest. Build after the underlying data matters.
 
-### Q10. Reporting architecture
+Its own preference was to explore 1–3 before committing to 4–5. We agree.
 
-Every meaningful change appends an event with cause IDs. Reports read the log and
-never recompute.
+### 12.4 What it recommended that we declined
 
-- Does storing causality as event IDs scale, or become unreadable?
-- How should a report be structured? What makes a good end-of-day summary for a
-  game about eight people?
-- What is the right amount of detail? Too little is opaque, too much is a wall.
+| Recommendation | Our response |
+|---|---|
+| **Don't start Stage 1 yet; audit the original documents first.** | **Declined.** A document audit before implementation is exactly the drift the gates prevent. Stage 1 has no people, no decisions, no mechanics — a clock and some numbers. It cannot be invalidated by a later design change. The original documents are preserved in full for any reviewer who wants them. |
+| **Settle four design questions before Stage 1.** | **Declined as a blocker.** All four are recorded (Q16–Q19). None affects Stage 1, which has no personnel to fail, no decisions to make, and no morale. They are Stage 3 and Stage 5 questions. |
+| **"Locked" should be treated as an unverified claim.** | **Accepted.** See §2.5 and §5.1. |
 
----
+### 12.5 Our reasoning, stated plainly
 
-### Q11. Determinism, honestly
+The review's conclusion was: *"Don't start Stage 1 just yet… let's make sure
+we're building your dream game."*
 
-We want reproducible runs so bugs can be diagnosed and replays compared.
-
-- What do we give up by being fully deterministic? Any design options that
-  depend on genuine unpredictability?
-- Is a seed-based golden-run test suite worth building, or does it become a
-  maintenance burden that gets abandoned?
-
----
-
-### Q12. Phone-first UI
-
-Target device is a phone browser. Panels only, no map.
-
-- What is the information architecture for a many-panel game on a small screen?
-- What belongs on the always-visible screen versus behind a tap?
-- Is there a reason to allow desktop later, or should it be phone-only by design?
-
----
-
-### Q13. What are we obviously missing?
-
-Not "add more features" — features are not what this project needs.
-
-- What question about the player's experience have we never asked?
-- What system would deepen this game that we have not considered at all?
-- What is a feature we would add if we were certain it was cheap?
+Our answer: the goal is right and the timing is wrong. **The dream game is not
+specified anywhere — it does not exist yet.** No amount of document review will
+produce it. It exists only once someone has watched a base run and decided
+whether it moved them. Stage 1 is the cheapest possible step toward that, and
+delaying it is the one action guaranteed to delay learning.
 
 ---
 
-### Q14. Challenge the gates
-
-Our gates are feelings, not features: "watching them work is interesting",
-"something can be lost and you felt it", "you want to play day 5".
-
-- Are those the right gates? Any too vague to ever be honestly answered?
-- Which gate is most likely to be faked by the developer?
-- Is there a stage we skipped that should exist before Stage 2?
-
----
-
-### Q15. What should we deliberately never build?
-
-- What feature would be tempting, look impressive, and quietly damage the game?
-- What would we regret in two years?
-- If you were advising us to protect the original vision, what would you tell us
-  to refuse?
-
----
-
-### Q16–Q20. Your own questions
-
-If you see a risk, a contradiction, or an unasked question, add it here.
-Continue numbering from Q16.
-
----
-
-## Part 10 — Environment
+## Part 13 — Environment and repository
 
 - Development on an **Android phone in Termux**. A desktop is currently
   unavailable.
 - Played in the **phone browser** via a Vite dev server.
-- Node and git installed. Git is local only — nothing pushed.
+- Node and git installed. Git is local only — **nothing pushed, no backup
+  off-device.**
 - **Code must stay in Termux home**, not shared storage: shared storage is a
   FUSE mount where `node_modules` is slow and file watching breaks.
-- Documentation is mirrored to shared storage for reading on the phone. The
-  mirror is a copy — edit the source, then sync.
+- Documentation is mirrored to shared storage for phone reading. The mirror is a
+  copy — edit the source, then sync.
 - The developer is a **beginner/intermediate developer**. Explain unfamiliar
   tooling rather than assuming it.
 
 ---
 
-## Part 11 — If you are helping build rather than review
+## Part 14 — How to help
 
-- **Start at Stage 1**, exactly as specified in Part 5. It is small and
-  deliberately so.
-- **Respect the pure-simulation rule** in Part 4 without exception.
-- **Critique whether a gate is genuinely met** rather than assuming it is. The
-  greatest risk is advancing past a stage that is not yet fun.
-- **Flag any suggestion that reintroduces parked features early.**
-- **Propose improvements with written rationale.** Put speculative ideas in a
-  clearly labelled parking lot rather than the active design.
-- **Be direct.** A confident disagreement with a stated cost is far more useful
-  than a polite non-answer. Nothing here is sacred — but nothing changes on a
-  hunch either.
+**If reviewing the design:** answer Part 11. Be direct — a confident
+disagreement with a stated cost is far more useful than a polite non-answer.
+Nothing here is sacred, but nothing changes on a hunch either.
 
----
+**If building:** start at Stage 1 exactly as specified in Part 7. It is small and
+deliberately so. Respect the pure-simulation rule without exception. Flag any
+suggestion that reintroduces parked features early. Propose improvements with
+written rationale, and put speculative ideas in a clearly labelled parking lot.
 
-## Part 12 — One-paragraph summary
+**Two things worth knowing:**
 
-A slow, methodical, unglamorous build: a military base simulation where
-autonomous people create understandable consequences, watched from above and
-shaped by occasional meaningful choices. Planning is complete and the
-architecture is settled. Implementation begins with a deliberately trivial
-simulation that ticks, existing to prove one hypothesis — that watching a small
-autonomous base is interesting — before any ambitious system is built on top of
-it. The rule that governs everything: the simulation must never depend on the
-UI.
+- The developer's biggest documented fear is building a technically impressive
+  simulator that is boring to play. Every judgement should serve that concern.
+- The developer has previously been handed plans and approved them on trust
+  rather than item by item. That is fine, but it means **no plan has yet been
+  genuinely stress-tested by the person it is for.** If you see something they
+  would not have noticed, say so plainly rather than deferring to the existing
+  design.

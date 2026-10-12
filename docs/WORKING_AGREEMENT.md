@@ -73,7 +73,7 @@ propose things that were already considered and rejected.
 | Change | Update |
 |---|---|
 | A design decision is made or reversed | `LOCKED_DECISIONS.md`, then `AGENTS.md` |
-| Another assistant answers Part 9 of `REVIEW_BRIEF.md` | `docs/REVIEW_REPLIES.md`, then act on it |
+| Another assistant reviews `REVIEW_BRIEF.md` | `REVIEW_REPLIES.md`, then act on it and update the affected documents |
 | The build moves to a new stage | `ROADMAP.md`, `PROJECT_SUMMARY.md`, `AGENTS.md` checkpoint |
 | A new system is designed | `LONG_TERM_DESIGN.md` |
 | An architectural rule changes | `ARCHITECTURE.md`, then `AGENTS.md` |

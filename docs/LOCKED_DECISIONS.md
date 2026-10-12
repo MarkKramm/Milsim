@@ -1,26 +1,67 @@
-# Locked Decisions
+# Settled Decisions
 
-Source: `DECISIONS_ANSWERED.md` (your answers) + audit recommendations.
-Status: **locked**. These are no longer open questions. Changing one now is
-cheap; after Stage 1 it costs real refactoring.
+Source: `DECISIONS_ANSWERED.md` (your answers), audit recommendations, and
+`REVIEW_REPLIES.md` (external review).
+
+## About the word "settled"
+
+An earlier version of this document said **locked**. That was changed after an
+external review made a fair point: *the developer approved most of these by
+trusting the recommendation wholesale, not by examining each one individually.*
+
+So the honest position is:
+
+- These decisions reflect a real recommendation, accepted in good faith.
+- They have **not** all been individually examined and confirmed.
+- **Any of them can be revisited at any time**, and changing one now is far
+  cheaper than changing one after it is built.
+
+Nothing here is sacred. What is sacred is only that changes are made
+deliberately and written down.
 
 ---
 
-## D1 — Stakes: Soft failure spine **+ injuries (planned, not immediate)**
+## D1 — Stakes: Readiness spine, *revised* after external review
 
-Confirmed. Unit readiness drifts down when people are hungry, tired, or idle,
-and up when fed, rested, working. Readiness hits 0 → people quit → staffing
-crisis.
+Confirmed in principle. Unit readiness reflects how well the base is being run,
+and at low levels people eventually leave.
 
-Injuries are **added to the long-term design** (see `LONG_TERM_DESIGN.md` §3).
-Your reasoning was right: not every moment in a sim should be pleasant, and
-injury is one of the cheapest sources of genuine drama. It is scheduled after
-the soft failure spine works, because injuries layered on a sim with no stakes
-just produce slow decay.
+**Two corrections, both accepted from external review:**
+
+**1. Readiness is derived, not a magic meter.** It is recomputed each tick from
+observable underlying state and is **never an input to any other system**. It
+only summarises and reports. The player must always be able to see why it
+moved — "readiness fell because meals were missed and rest was repeatedly
+interrupted" — and be able to trace that to the supply shortage or the work
+schedule that caused it.
+
+If readiness merely duplicates hunger and fatigue, it adds complexity without
+adding meaning, and should be cut.
+
+**2. Legitimate rest is not idleness.** This was a genuine design bug. The
+original rule counted *all* idleness as a negative. A soldier resting after a
+demanding shift is doing exactly what the base needs. Readiness must not fall
+during legitimate recovery — only *unproductive* idleness counts against the
+base.
+
+**3. Graduated consequences, not a cliff.** Zero readiness no longer means an
+immediate irreversible departure. Instead:
+
+1. **Warning** — a visible flag on the person and in the report.
+2. **Reduced effectiveness** — slower work, higher chance of minor failure.
+3. **Declines demanding work** — will not take exhausting tasks.
+4. **Refuses optional assignments** — declines extra shifts and favours.
+5. **Leaves** — only after sustained neglect at the bottom.
+
+This preserves the stakes while giving the player a chance to see and respond.
+An instant, irreversible loss is the kind of thing that makes a simulation feel
+unfair rather than demanding.
+
+Injuries remain a later layer (`LONG_TERM_DESIGN.md` §3).
 
 ---
 
-## D2 — Player agency: Named-option decisions
+## D2 — Player agency: Named-option decisions **+ a separate intent layer**
 
 Confirmed. A few times per day the simulation produces a concrete situation
 with 2–3 named, specific options and a visible cost to each. These **queue** in
@@ -28,12 +69,54 @@ the report rather than interrupting — you decide in batches.
 
 This is the single decision that turns the simulation into a game.
 
+**Addition accepted from external review — options must be genuine tradeoffs.**
+Each option has to protect a different priority. A decision whose correct answer
+is obvious teaches the player nothing and wastes an interruption. Both options
+should have a credible benefit and a credible cost; the player should understand
+the immediate tradeoff clearly while remaining uncertain about outcomes that
+depend on later events.
+
+Each option explains: what happens, why it matters now, what it costs
+immediately, and what risk it leaves unresolved.
+
+**Addition — player intent is a design concept, not a UI control.** External
+review identified a real gap: our plan described the player's actions only as
+sliders, which meant *intent existed nowhere except in the interface.* That
+leaks the design back into the UI.
+
+Player intent is now a first-class simulation input — priorities, reserves, and
+policies stored in state as data (see `ARCHITECTURE.md` §4.2). The interface is
+only one way to set it. Headless tests set intent directly; a future preset
+system would set it without any UI.
+
+And: **an intent whose effect cannot be observed is a dead control.**
+
 ---
 
 ## D3 — Normal days: Rule-generated anomalies + player-set goals
 
 Confirmed. Anomalies are generated by the simulation rules, never scripted
 story beats. Player-set goals are tracked by the report.
+
+**Revision accepted from external review — a hybrid anomaly model.** Pure
+emergence is hard to control; pure scripting is fake. The adopted approach:
+
+1. **Authored anomaly *rules*** — define recognizable situations and their
+   possible consequences. Rules, not stories.
+2. **Simulation-gated eligibility** — a rule may only fire when the current
+   state supports it.
+3. **Seeded selection** — the deterministic RNG picks among eligible outcomes.
+4. **Causal follow-through** — what the anomaly changed, and what happened
+   because of it, is recorded.
+
+**An anomaly must earn its place.** It should change a decision, reveal a risk,
+create a story, or provide useful information. If it only makes the log look
+busy, it is noise and should be removed. Governing rule: *importance and
+frequency*, not variety.
+
+**A late delivery is not interesting by itself.** It becomes interesting when
+the player understands which supply it affects, who needs it, and what other
+options remain.
 
 Relationships are **deferred to the long-term design**, not dropped.
 

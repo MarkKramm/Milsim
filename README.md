@@ -57,11 +57,12 @@ Full map in `docs/PROJECT_SUMMARY.md`. The essentials:
 | Document | What it covers |
 |---|---|
 | `PROJECT_SUMMARY.md` | **Start here** — orientation and status |
-| `LOCKED_DECISIONS.md` | The 18 settled design decisions |
+| `LOCKED_DECISIONS.md` | The settled design decisions, with corrections from external review |
+| `OPEN_QUESTIONS.md` | Genuinely unresolved questions |
 | `ROADMAP.md` | Build order and gates |
 | `ARCHITECTURE.md` | Technical foundation |
 | `LONG_TERM_DESIGN.md` | What the full game eventually becomes |
-| `REVIEW_BRIEF.md` | **The one file to send another assistant** — self-contained, includes 20 open questions |
+| `REVIEW_BRIEF.md` | **The one file to send another assistant** — self-contained, includes 10 open questions |
 
 ---
 

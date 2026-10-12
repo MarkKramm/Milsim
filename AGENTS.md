@@ -14,13 +14,14 @@ they are synced, and when each must be updated.
 
 ## Checkpoint
 
-**Last updated:** end of the planning phase. No code has been written yet.
+**Last updated:** after the first external review. No code has been written yet.
 
 | | |
 |---|---|
 | **Phase** | Planning complete, implementation not started |
 | **Code** | None. Only empty directories and a `.gitignore` |
-| **Git** | One commit, local only, nothing pushed |
+| **Git** | Local commits only, nothing pushed |
+| **External review** | One received, audited, corrections applied |
 | **Next action** | Stage 1 — a simulation that ticks |
 | **Blocked on** | Nothing. Stage 1 can begin immediately |
 
@@ -45,6 +46,14 @@ make a small number of meaningful choices.
 ## What is decided — do not re-litigate these
 
 The design is settled. `docs/LOCKED_DECISIONS.md` has full rationale for each.
+They are called **settled**, not locked: the developer approved most by trusting
+a recommendation rather than by item-by-item confirmation, so any can be
+revisited. See the note at the top of that file.
+
+One external review has already been completed and its corrections applied —
+see `docs/REVIEW_REPLIES.md`. It found several genuine errors in this plan,
+including two that have since been fixed (readiness penalising legitimate rest,
+and readiness being a magic meter). Do not reintroduce them.
 
 1. **Stakes:** a "readiness" value drifts down when people are hungry, tired, or
    idle; at zero, people quit. Injuries are a later layer.
@@ -115,21 +124,25 @@ Deliberately trivial. It exists to validate the time model in one evening.
 **No people, no jobs, no needs yet.** Just a clock and numbers.
 
 **Gate to pass before Stage 2:** you watch the clock advance and the numbers
-move, and you understand them. Nothing more.
+move, and you understand them. Nothing more. This is a **technical** gate —
+Stage 1 has no personnel, so it cannot test whether watching them is fun.
 
 ---
 
 ## How to work on this project
 
 **Gates, not deadlines.** There is no schedule. Each stage has an exit gate that
-is an *observation or a feeling*, not a feature list. You may not advance past a
-stage that is not yet interesting, no matter how much you want to build the
-factory layer.
+is an *observation*, not a feature list, and since the first external review
+every gameplay gate requires **observable evidence**: you must be able to say
+yes to at least three of four specific questions (`docs/ROADMAP.md` §Gate
+evidence). You may not advance past a stage that is not yet interesting, however
+much you want to build the factory layer.
 
 **The two ways this project dies:**
 
 1. **Advancing past a gate that isn't met.** Building systems on an unverified
-   assumption that the base simulation is fun.
+   assumption that the base simulation is fun. The original version of this plan
+   wrote its gates as feelings and could be lied to — that has been fixed.
 2. **Drift.** A passion project with no deadline dies when months go into
    systems that were never played.
 
@@ -168,12 +181,14 @@ of a change plainly; do not silently alter scope.
 |---|---|
 | `AGENTS.md` | This file — continuation brief |
 | `docs/PROJECT_SUMMARY.md` | One-page orientation |
-| `docs/LOCKED_DECISIONS.md` | The full set of 18 locked decisions (D1–D20) with rationale — the list above is a condensed 12-point version of it |
-| `docs/ROADMAP.md` | Build order and gates |
+| `docs/LOCKED_DECISIONS.md` | The full decision set with rationale, including corrections from external review |
+| `docs/OPEN_QUESTIONS.md` | Genuinely unresolved questions — Q16–Q25 raised by the external review |
+| `docs/ORIGINAL_PLANNING_PACK.md` | The original, superseded planning documents, preserved for audit |
+| `docs/ROADMAP.md` | Build order and evidence-based gates |
 | `docs/ARCHITECTURE.md` | Technical foundation, tick order, state shape |
 | `docs/LONG_TERM_DESIGN.md` | The full game, designed |
-| `docs/REVIEW_BRIEF.md` | **The one file to send another assistant** — self-contained context, decisions, roadmap, risks, and 20 open questions |
-| `docs/REVIEW_REPLIES.md` | Answers received from another assistant |
+| `docs/REVIEW_BRIEF.md` | **The one file to send another assistant** — self-contained: history, decisions, architecture, roadmap, risks, 10 open questions, and the full record of the review already completed |
+| `docs/REVIEW_REPLIES.md` | The external review, what was accepted, what was declined, and why |
 | `docs/WORKING_AGREEMENT.md` | Where docs live, how to sync them, when to update what |
 | `docs/GAME_VISION.md` | Vision and design pillars |
 | `docs/CORE_LOOP.md` | The repeating gameplay loop |
@@ -181,7 +196,8 @@ of a change plainly; do not silently alter scope.
 | `docs/AUDIT_AND_RECOMMENDATIONS.md` | Critical review of the original plan |
 | `docs/DECISIONS_TO_APPROVE.md` | Decision questions with recommendations |
 | `docs/DECISIONS_ANSWERED.md` | The developer's actual answers |
-| `docs/FOUNDATION_DECISIONS.md`, `docs/IMPLEMENTATION_STAGES.md`, `docs/OPEN_QUESTIONS.md`, `docs/MASTER_PROMPT.md` | Original planning pack; background, mostly superseded |
+| `docs/ORIGINAL_PLANNING_PACK.md` | The original superseded planning documents, preserved for audit |
+| `docs/FOUNDATION_DECISIONS.md`, `docs/IMPLEMENTATION_STAGES.md`, `docs/MASTER_PROMPT.md` | Original planning files; background, superseded |
 
 ---
 

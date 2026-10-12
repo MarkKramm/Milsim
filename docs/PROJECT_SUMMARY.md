@@ -44,18 +44,19 @@ Read in this order if you are new:
 | **`PROJECT_SUMMARY.md`** | *(this file)* What is this and what's next |
 | `GAME_VISION.md` | What the game is and why it could be good |
 | `CORE_LOOP.md` | The repeating gameplay loop |
-| `LOCKED_DECISIONS.md` | **What is decided and no longer open** |
+| `LOCKED_DECISIONS.md` | **What is decided — and revisitable** |
 | `LONG_TERM_DESIGN.md` | What the full game eventually becomes |
 | `ARCHITECTURE.md` | How it is built, and the rules that must hold |
 | `ROADMAP.md` | Build order and gates |
 | `AUDIT_AND_RECOMMENDATIONS.md` | Critical review of the original plan |
-| `REVIEW_BRIEF.md` | **The single file to send another assistant** — context, decisions, roadmap, risks, and 20 questions |
-| `REVIEW_REPLIES.md` | Answers received from other assistants |
+| `REVIEW_BRIEF.md` | **The single file to send another assistant** — full history, decisions, roadmap, risks, and 10 open questions |
+| `REVIEW_REPLIES.md` | The external review, and what we accepted or declined |
+| `OPEN_QUESTIONS.md` | Genuinely unresolved questions |
+| `ORIGINAL_PLANNING_PACK.md` | The original superseded documents, preserved for audit |
 | `DECISIONS_TO_APPROVE.md` | The questions, with recommendations |
 | `DECISIONS_ANSWERED.md` | The player's actual answers |
 | `PROTOTYPE_SPEC.md` | First prototype scope and acceptance criteria |
 | `IMPLEMENTATION_STAGES.md` | Original staging notes |
-| `OPEN_QUESTIONS.md` | Unresolved items (mostly superseded) |
 | `MASTER_PROMPT.md` | Original instructions that started this |
 
 ---

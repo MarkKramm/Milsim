@@ -1,0 +1,26 @@
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# build output
+build/
+.vite/
+
+# editor
+.vscode/
+.idea/
+*.swp
+
+# os
+.DS_Store
+Thumbs.db
+
+# sim saves and debug dumps
+saves/
+*.sim.json
+run-*.json
+
+# logs
+*.log
+npm-debug.log*

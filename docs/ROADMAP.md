@@ -21,12 +21,15 @@ wasn't actually fun yet.
 | 4 | Decisions and reports | **You made a choice and understood its effect** | 3 of 4 |
 | 5 | Reasons to continue | **You want to play day 5** | 3 of 4 |
 | 6 | Evidence review | *a decision, not a build* | — |
-| 7 | Equipment and logistics | The base is a world of **specific things**, not totals | — |
+| 7 | Equipment and logistics **(guaranteed)** | The base is a world of **specific things**, not totals | — |
 | 8 | Production and workshop | The bottleneck is **people**, not throughput | — |
 | 9 | Vehicles | A dispatched vehicle can leave and not return | — |
 | 10 | External operations *(parked)* | An external threat is meaningful rather than arbitrary | — |
 
-**Stages 6–10 are candidates, not commitments.** They depend on evidence from
+**Stage 7 is guaranteed.** Equipment and loadouts are a settled milestone (D21),
+not a candidate — the project must not quietly become a generic colony sim.
+
+**Stages 8–10 are candidates, not commitments.** They depend on evidence from
 Stage 5 and may be reordered, merged, or dropped.
 
 ### Gates must test what the stage can actually answer
@@ -105,8 +108,38 @@ understand them. Nothing more.
 *Technical gate only — see §Gate evidence. Stage 1 cannot test gameplay
 because it contains no people.*
 
-**Why so empty:** it validates the time model (D4) in one evening. If 3
-minutes per day feels wrong, you find out now, not after a month of building.
+**Why so empty:** it validates the time model (D4) in one evening. If 3 minutes
+per day feels wrong, you find out now, not after a month of building.
+
+### The Stage 1 contract
+
+*Added after the third external review, which correctly observed that "build a
+clock and some numbers" leaves every implementation detail to be invented during
+implementation — which is how the same decision gets made two incompatible ways
+in two files.*
+
+Questions that must be answered before the first commit, with their answers:
+
+| Question | Decision |
+|---|---|
+| Initial tick | **0.** The run begins at the start of Day 1. |
+| Displayed day | **`floor(tick / 1440) + 1`.** Tick 0 shows "Day 1". There is no Day 0 — a run has no day before it begins. |
+| First displayed period | **Night.** A day starts at 00:00, which is night. |
+| Period boundaries | Night 0–5, Morning 6–11, Afternoon 12–17, Evening 18–23, by minute-of-day. Abstract only — never a clock. |
+| Day rollover event | Emitted at the tick where `tick % 1440 === 0`, tier `routine`, data `{ day }`. |
+| Values shown in the UI | Day + period, tick, seed, `rngCursor`, elapsed in-game minutes, events appended this tick, log length. All read-only. |
+| What makes them move | Tick advances → day/period derive. Cursor advances only via `rand()`. Stage 1 emits no randomness by design, so the cursor should stay at 0 — **that is the correct behaviour, not a bug.** |
+| RNG algorithm | **Mulberry32**, 32-bit, seeded from `seed`. Chosen for being 5 lines, well-distributed, and trivially portable — the property that matters, since replay compatibility is permanent. |
+| Seed representation | A 32-bit unsigned integer. Displayed as decimal. Default `20260101` (readable, and not a magic constant anyone will confuse for a real date). |
+| Where commands live | `state.pendingCommands[]`, drained at tick step 2, then emptied. Persisted with state, so a saved run resumes with unissued orders intact. |
+| Event log | Single copy in `state.log`; `tick()` returns the new state, not a separate array. See `ARCHITECTURE.md` §4.0. |
+| Background throttling | Browsers freeze `setInterval` in background tabs. **The simulation is driven by accumulated wall-clock time, not by counting callbacks** — so a throttled or resumed tab produces the *same* ticks for the same elapsed time, and pausing on `visibilitychange` is a UI affordance, not a correctness requirement. |
+
+**The throttling decision matters more than it looks.** A naive
+`setInterval` loop produces *fewer* ticks after a background suspension, and a
+naive fix (`catch up` in a loop) can produce a burst that stalls the phone. The
+rule is: the controller accumulates real elapsed time and advances the
+simulation by whole ticks, capped at a bounded catch-up per frame.
 
 ---
 
@@ -142,6 +175,39 @@ of the same question.
 people working is cute, and cuteness feels like fun. The honest test is evidence
 item 4 — play a fourth and fifth day without novelty, and notice whether you are
 still watching.
+
+### The Stage 2 reference scenario
+
+*Added after the third external review. A feature list does not guarantee the
+experiment happens: if the starting conditions never create a conflict, the
+priority control looks useless even when correctly implemented. Conversely, if
+one priority always wins, no real trade-off was tested. This is the fixture that
+makes the gate meaningful.*
+
+Fixed starting conditions — deliberately small and reproducible:
+
+| Element | Setup | Why |
+|---|---|---|
+| Personnel | 7: 3 generalists, 2 maintenance-capable, 2 supply-capable | Small enough to read on a phone |
+| Jobs | **Maintenance**, **Meal preparation**, **Standby** | Two competing kinds of work, plus a fallback |
+| Facilities | 1 workshop (capacity 2), 1 kitchen (capacity 2) | Capacity is what creates contention |
+| Initial priority | **Balanced** | The neutral baseline both other settings must beat |
+| Duration | Maintenance 90 min, meal 30 min | Long enough to see a job span multiple ticks of visible state |
+
+**The conflict must be real.** With 7 people and 2+2 capacity there is *never*
+labour shortage — so the test needs demand above capacity, not below it. Two
+conditions must hold:
+
+1. **Both priority settings change observable behaviour.** Setting
+   "Maintenance first" must visibly starve meal preparation on at least one
+   in-game day, and "Meals first" must visibly defer maintenance.
+2. **Neither setting is strictly dominant.** If one order wins every day, the
+   fixture is broken and must be adjusted before the gate is attempted.
+
+**What the interface must show:** for each person, the job they chose *and the
+reason*. A person who picks maintenance while meals go unattended is the whole
+point of the test — the player can only judge autonomy if they can see the
+reasoning, not just the outcome.
 
 **Questions passed forward:**
 - Is the "reason they chose it" explanation enough to make behaviour legible?
@@ -221,6 +287,21 @@ tradeoff, chosen under uncertainty, produces consequences you can trace.
 **Gate:** **you want to play day 5.** The real test of a sim.
 Requires 3 of the 4 evidence items.
 
+**Demonstrate Chain A1** (`SYSTEM_DEPENDENCIES.md` §7) — resource contention
+producing a consequence the player can trace. *An earlier version of this
+roadmap required the full equipment-based Chain A here, which was impossible:
+items are Stage 7 and production is Stage 8. A gate the plan cannot pass is not
+a gate, so the chain was split into A1 (here) and A2 (Stage 8).*
+
+**Do not pass this stage by adding features.** If day 5 is boring, the fix is
+usually to remove systems, not add them.
+
+**Deferred past this stage:** secrets and achievements. They reward a good
+experience rather than creating one. If this gate passes without them they remain
+worth building; if it barely passes, they will not save it. *(Labelled Stage 5+
+in the blueprint's system map — the two documents previously disagreed on whether
+this was Stage 5 or "after 5".)*
+
 **Do not pass this stage by adding features.** If day 5 is boring, the fix is
 usually to remove systems, not add them.
 
@@ -240,27 +321,40 @@ worth building; if it barely passes, they will not save it.
 
 **This stage is a decision, not a build.**
 
-Stage 5's evidence selects **exactly one** expansion. Candidates and their
-triggering evidence:
+**Equipment is guaranteed and is not among the candidates.** It was previously
+one of four options, which meant the project's defining feature — inspecting
+soldiers, their gear and their individual loadouts — could be postponed
+indefinitely by evidence review. Third external review flagged this as the
+largest vision risk, and it is correct: a game that quietly becomes a generic
+colony simulator has lost the thing worth years of work. Equipment is now a firm
+milestone with a defined model (`GAME_DESIGN_BLUEPRINT.md` §A), and Stage 6
+decides what is added *beside* it.
+
+What remains genuinely open is **which single additional expansion** earns its
+place. Candidates and their triggering evidence:
 
 | Candidate | Choose it if Stage 5 showed the player cared about... |
 |---|---|
-| **Equipment condition** | the workshop and specific items — *leading candidate* |
 | Training / skills | people improving at what they do |
 | Deeper deliveries and logistics | supplies and shortages |
 | First operation | wanting to act on the outside world |
+| Relationships and friction | who works with whom mattering day to day |
 
-**Leading candidate: equipment condition.** It connects the most existing
-threads at once — personnel skill, maintenance, resources, and the persistent
-items the developer most wants to inspect.
+**Leading candidate: training / skills.** It reuses the personnel data Stage 2
+already creates and makes the difference between a mechanic and an electrician
+observable, which is the same appeal as equipment condition — specific people
+rather than totals.
 
-Adding all four is how this project dies.
+Adding all of them is how this project dies.
+
+**What Stage 6 does not decide:** whether equipment ships. It is settled
+(`LOCKED_DECISIONS.md` D21).
 
 ---
 
 ## Stage 7 — Equipment and logistics
 
-*(Conditional on Stage 6 selecting it. This stage is not guaranteed.)*
+*(Guaranteed — D21. This stage is not conditional, though its scope is.)*
 
 Individual items with condition, wear, and reliability. Maintenance needs,
 parts, storage limits, imperfect deliveries, and repairs that change the actual
@@ -268,6 +362,10 @@ condition of a specific item.
 
 **Gate:** the base reads as a world of **specific, individual things**, not a set
 of resource totals. A repair changed *that* item, and the player can see it.
+
+Also required: a soldier's loadout is inspectable — which slots are filled,
+which items are missing or broken, and what they can or cannot do because of it.
+A simple item list satisfies the first sentence and fails this one.
 
 **Watch for the trap:** the moment players start solving production as a
 throughput puzzle instead of a management story, the game's identity has slipped.
@@ -282,6 +380,9 @@ need resources to exist.)*
 
 Manufacturing, repair-versus-production trade-offs, engines, fuel, and resource
 chains.
+
+**Demonstrate Chain A2** (`SYSTEM_DEPENDENCIES.md` §7) — the full equipment
+chain, with the worn item inspectable before and after the repair.
 
 **Gate:** the bottleneck is **people**, not throughput.
 

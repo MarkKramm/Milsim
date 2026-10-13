@@ -380,6 +380,41 @@ missing. The order just protects the order.
 
 ---
 
+## D21 — Equipment and loadouts are guaranteed, not conditional
+
+*Added after the third external review.*
+
+Equipment condition was originally one of four candidates at Stage 6's evidence
+review. That looked like scope discipline. It was also a slow extinction.
+
+Every stage after 6 is conditional. If Stage 6 picked logistics instead, Stage 7
+would become "whatever else the evidence supports" — and the equipment work, the
+reason this project is a *military* base sim rather than a generic colony sim,
+would have no stage at all. A gate that can indefinitely postpone the defining
+feature is not a gate.
+
+**Decision: a minimum equipment and loadout experience is a guaranteed milestone.**
+Stage 7 happens. Its *scope* remains negotiable — how many item types, how deep
+the repair model, whether armour values matter — but the stage does not.
+
+This does not commit to building it now, and it does not weaken Stage 6. Stage 6
+still chooses one additional expansion; it simply no longer chooses whether
+equipment exists.
+
+**The structural contract** — soldier, item, slot, loadout, and how vehicles
+relate to all of it — is fixed in `GAME_DESIGN_BLUEPRINT.md`, "The equipment
+structural contract". The developer's interest is *inspection*: soldiers,
+helmets, clothing, pockets, durability, armour, weapons, loadouts. A flat item
+list with a condition bar would satisfy the old wording of Stage 7 while missing
+all of it, so the guarantee is tied to that contract rather than to the word
+"equipment".
+
+**The rule this follows:** scope is negotiable, identity is not. If the evidence
+says equipment matters less than expected, build less of it — but the base must
+end up a world of specific, inspectable things rather than totals.
+
+---
+
 ## Summary of what changed from the original planning pack
 
 | Area | Original plan | Now |

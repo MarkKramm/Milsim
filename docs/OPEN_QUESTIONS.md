@@ -269,6 +269,11 @@ provisional until tested.
 
 ### Q34. What should we refuse to build, ever? — PROVISIONAL
 
+*Partly answered by the third external review.* The pattern it identified is now
+D21: **scope is negotiable, identity is not.** Equipment is guaranteed; its size
+is not. The remaining half of this question is whether there is a second feature
+with the same claim.
+
 Nominated traps, from external review:
 
 - A large collection of stats that never changes a decision.
@@ -289,6 +294,8 @@ when the feature is most tempting.
 ---
 
 ### Q35. Does combat ever ship? — OPEN
+
+*Unchanged by the third review, which agreed it should stay open.*
 
 The entire external layer is parked. It may never exist.
 

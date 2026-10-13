@@ -632,8 +632,14 @@ and the item may fail during use — recorded as an event with a cause. Repair
 changes the actual condition of *that* item. Loadout assignment affects a
 person's capability, not merely a statistic.
 
+**Ownership: Items alone writes `condition`.** A job that damages equipment does
+not decrement it; it sends a `wear(itemId, amount)` request, and Items applies
+it. An earlier draft's test section said condition "changes only through repair or
+production", which contradicted the degradation rule above and would have
+prevented wear from ever happening. Invariant 16 enforces the resolution.
+
 **4. Dependencies.** Owns items. Read by Jobs (reliability), Production
-(repair orders), Facilities (storage). Written by Production and D4.
+(repair orders), Facilities (storage). Nothing writes item fields except Items.
 
 **5. Autonomy.** Items wear without supervision. Nobody "maintains" an item
 except by doing a repair job.
@@ -820,7 +826,7 @@ value per pair, plus a threshold that surfaces one line in the report. **No
 dialogue trees, no personality simulation.**
 
 **4. Dependencies.** Owns relationship values. Read by Jobs as a cooperation
-modifier — **applied at tier 8, read next tick** (see
+modifier — **applied at phase 8, read next tick** (see
 `SYSTEM_DEPENDENCIES.md` §8).
 
 **5. Autonomy.** Total.
@@ -887,7 +893,7 @@ eligibility reasons.
 
 ## F3. Run continuity — history, secrets, achievements
 
-**Status:** PROVISIONAL · **Stage 5**
+**Status:** PROVISIONAL · **Stage 5** *(run history)* / **Stage 5+** *(secrets, achievements)*
 
 **1. Purpose.** Answers the developer's own question: *"if nothing interesting
 happens, and I lose everyone — is a loss still okay?"* Yes, if something
@@ -913,7 +919,11 @@ rather than creating one. If Stage 5 barely passes, they will not save it.
 
 **10. Tests.** Data survives a completed run and appears in the next one.
 
-**11. Stage.** 5, deferred.
+**11. Stage.** Run history at **Stage 5**; secrets and achievements at **Stage 5+**,
+after the Stage 5 gate. *Corrected after the third external review: this entry
+previously read simply "Stage 5, deferred", which the roadmap read as Stage 5
+while the system map read it as after Stage 5. Two documents, two labels, one
+system.*
 
 ---
 
@@ -979,10 +989,111 @@ fix that first, before building on it.**
 
 **9. Interface.** Command line.
 
-**10. Tests.** It is itself the test. Plus the 15 invariants in
+**10. Tests.** It is itself the test. Plus the 19 invariants in
 `SYSTEM_DEPENDENCIES.md` §7.
 
 **11. Stage.** 1.
+
+---
+
+# Appendix — The equipment structural contract
+
+*Added after the third external review.*
+
+Stage 7 is **guaranteed** (D21), which raises the stakes: if it ships as a flat
+item list with a condition bar, it satisfies the roadmap and misses the thing
+worth years of work. The developer's interest is *inspection* — soldiers,
+helmets, clothing, pockets, durability, armour, weapons, loadouts, vehicles.
+That interest needs a structural model, not a catalogue of weapon stats.
+
+**This is a contract, not a content list.** Nothing here requires designing 100
+weapons. It fixes the shape so Stage 7 can be built without rediscovering what a
+"soldier's equipment" is.
+
+## 1. The soldier
+
+| Aspect | Owned by | Notes |
+|---|---|---|
+| Identity, role, specialty, personality seed | B1 Personnel | exists Stage 2 |
+| Skills and history | B1 Personnel | depth decided at Stage 6+ |
+| Needs, injuries | B4 Needs | exists Stage 3 |
+| Current activity and availability | B1 Personnel | exists Stage 2 |
+| **Carried equipment** | **D3 Items, via `assignedTo`** | Stage 7 |
+| **Loadout slots — which are filled, empty, or blocked** | **D3 Items** | Stage 7 |
+| **Effective capability** | **Derived**, from slots + condition | never stored |
+
+The derived capability is the point. A soldier's ability to perform a task
+should be *readable from their gear*, not stored as a number that gear can
+silently contradict.
+
+## 2. The item
+
+| Field | Meaning |
+|---|---|
+| `id` | Stable and unique. Identity must outlive the item's condition — a badly damaged rifle is still *that* rifle |
+| `type` | Helmet, clothing, webbing/pockets, armour, weapon, tool, spare part, vehicle part |
+| `ownerId` / `assignedTo` | A soldier, or unassigned in storage |
+| `locationId` | Where it physically is: a soldier, a facility, a storage, a vehicle |
+| `condition`, `wearRate` | 0–1. Owned by Items alone |
+| `reliability` | Derived from condition *and* repair history — a repaired item is never quite what it was |
+| `repairHistory[]` | Append-only, inspectable. A visible scar is more interesting than a bare number |
+| `requiredSlot` | Which slot it occupies if assigned |
+| `compatibleWith[]` | Prevents impossible loadouts being representable |
+| `consumableState` | Ammunition count, fuel, charge — where relevant |
+
+## 3. Slots, containers, and the ambiguity worth resolving now
+
+The developer's wish to inspect "helmets, clothing, pockets" is genuinely
+ambiguous, and leaving it unresolved is how Stage 7 produces a flat list. The
+resolution:
+
+> **Slots and containers are the same mechanism at different depths.** A soldier
+> has slots (primary weapon, sidearm, helmet, body armour, boots). Clothing and
+> webbing are *containers* — they hold pockets or magazines, which are themselves
+> slots with capacity. Everything is an item; some items hold other items.
+
+This gives one general mechanism rather than three special cases, and it makes
+"which pocket is the spare magazine in?" answerable.
+
+## 4. The loadout
+
+A loadout is **derived, never stored**: the set of items occupying a soldier's
+slots, resolved from `assignedTo` and `requiredSlot`.
+
+The interface must be able to answer, for any soldier, at any moment:
+
+- Which slots are filled, and by what
+- Which are **empty**, **incompatible**, **broken**, or **held by someone else**
+- What the soldier can and cannot currently do as a result
+- What changed when an item was removed, damaged, or replaced
+
+**Removal is not symmetric with addition.** Giving a soldier a rifle should be a
+decision; taking it away — through failure, theft, or loss — should be an event
+the player notices. Losing a capability must never be silent.
+
+## 5. Vehicles in relation to the above
+
+*Vehicles are Stage 9 and may never ship. The contract is fixed anyway so that
+vehicles are not retrofitted onto a model that cannot hold them.*
+
+| Question | Answer |
+|---|---|
+| Are crew members assigned to seats? | Yes — crew is a loadout with role requirements. A seat is a slot |
+| Does vehicle cargo differ from base storage? | Yes. Cargo is **mobile**; when a vehicle is gone, its contents are gone |
+| How does mounted equipment differ? | A mounted item occupies a vehicle slot. A soldier with a mounted weapon is not carrying it |
+| Does damage degrade capability specifically? | Yes — not just a condition bar. A damaged engine changes range and speed; a damaged track immobilises it |
+| What happens if a vehicle is lost? | Crew survives or does not (its own chain), cargo is lost, mounted equipment is lost or recovered depending on cause |
+
+**A vehicle is not a fuel bar with an inventory attached.** It is a mobile
+platform with slots, crew with qualifications, and damage that changes what it
+can physically do.
+
+## 6. What this deliberately does not specify
+
+Weapon statistics, armour values, and a catalogue of equipment types. Those are
+content, tuned once the systems exist. Specifying 100 weapons now would be
+precisely the "catalogue instead of a simulation" trap the project has avoided so
+far.
 
 ---
 
@@ -999,11 +1110,11 @@ The complete assignment of every system to a stage, so none is left floating.
 | Anomalies, commitments, run history | 5 | No |
 | *Evidence review — choose one* | 6 | — |
 | Roles and specialties, morale, injuries | 6 or 7 | **Yes** |
-| Items, storage, logistics, deliveries | 7 | **Yes** |
+| **Equipment, loadouts, storage, logistics, deliveries** | **7** | **No — guaranteed (D21)** |
 | Production, repair, engines, fuel | 8 | **Yes** |
 | Vehicles | 9 | **Yes** |
 | Operations, threats, combat | 10 | **Yes — parked** |
-| Secrets, achievements | after 5 | **Yes** |
+| Secrets, achievements | 5+ *(after the Stage 5 gate)* | **Yes** |
 
 ---
 
@@ -1020,5 +1131,11 @@ at least one of them, it is not yet justified.
 | **D** — the departure: neglect compounds until someone leaves | §5 |
 | **E** — relationship consequence: who works together changes how fast | §5 |
 
-**Chain A is the reference chain.** If it cannot be demonstrated end to end by
-Stage 5, the game is not the game this document describes.
+**Chain A is the reference chain — and it is now two chains.** The full version
+needs individual items (Stage 7) and production (Stage 8), so requiring it by
+Stage 5 asked for a demonstration the roadmap could not produce. **A1** (resource
+contention, reachable by Stage 5) is now the Stage 5 reference scenario; **A2**
+(the full equipment chain) is the Stage 8 demonstration. See `SYSTEM_DEPENDENCIES.md`
+§7. If A1 works but A2 does not, the game is still viable — a base simulation
+with real contention. The reverse is not acceptable: shipping equipment later,
+untested, would leave the military identity of the game unproven.

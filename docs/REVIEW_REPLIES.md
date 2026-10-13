@@ -233,6 +233,97 @@ correct architecture produces under review.
 
 ---
 
+## Review 3 — ChatGPT
+
+**Trigger:** the third external review, given the blueprint, the dependency
+document, the roadmap and the brief.
+**Overall verdict:** *"the project has a strong foundation, but the documents
+claim to be a complete, consistent blueprint when some of their systems cannot
+yet work together as written."*
+
+### The framing that mattered
+
+This review came with an explicit instruction: reconcile the existing
+documents, explain any design changes, leave unrelated code alone. That is the
+first review to state a **scope boundary** rather than an ambition — and it is
+the distinction that made acting on it safe rather than another planning round.
+
+### What it found, and what was actually true
+
+**Four findings verified as real. All four were mine.**
+
+I checked each against the documents before acting rather than taking the
+review's word for it. All four were genuine.
+
+| Finding | Verified? | Resolution |
+|---|---|---|
+| **Dependency rules contradict themselves.** §2 said "read your own tier or higher-numbered tiers"; §3 said the opposite in the next paragraph. | **Real.** Both statements existed, three lines apart | Tiers were doing two jobs — dependency direction *and* execution order. Now three separate concepts: **ownership** (who writes), **phase** (when it runs), **service** (cross-cutting machinery). One unambiguous read rule. |
+| **Phase numbers did not match the tick order they described.** Needs sat at "tier 3" and Facilities at "tier 2", yet Needs ran first. | **Real.** The header claimed tier = evaluation order; the table contradicted it | Phases renumbered to match actual execution order. Events moved out of the sequence entirely — a service cannot be both first and last. |
+| **Several systems claimed the same data.** Readiness owned by Needs but listed separately; Personnel writing Needs; Production writing Facilities; Resources and Storage both owning holdings. | **Real.** Four distinct ownership ambiguities | A field-level ownership table: every mutable field, its owner, who may request changes. Plus the **request pattern** — a system never writes another's field, it asks. |
+| **Chain A could not be proven by Stage 5.** The reference chain needs items (Stage 7) and production (Stage 8). | **Real, and the worst of the four** | Split into **A1** (resource contention, reachable by Stage 5, now the Stage 5 gate) and **A2** (full equipment chain, Stage 8). |
+
+Plus a smaller contradiction: item condition "degrades with use" in the rules
+but "changes only through repair or production" in the tests — a contradiction
+that would have prevented wear from ever happening. Now invariant 16.
+
+### The finding I had under-weighted
+
+**Equipment was droppable.** Stage 6's evidence review chose one of four
+expansions, and equipment was one of them. Every stage after 6 is conditional, so
+the project's defining feature — inspecting soldiers, their gear and loadouts —
+had no guaranteed stage. The review called this the largest vision risk.
+
+It was right, and I had dismissed the same concern as "scope discipline" when I
+wrote it.
+
+**Now D21:** a minimum equipment and loadout experience is guaranteed. Its scope
+stays negotiable; the stage does not. Stage 6 now chooses what is added *beside*
+equipment.
+
+### What it asked for that went beyond fixing contradictions
+
+**A structural model for soldiers, items and loadouts.** Correct, and the
+largest single addition. The interest here is *inspection* — helmets, clothing,
+pockets, durability, armour, weapons — and Stage 7 could have shipped as a flat
+item list with a condition bar while satisfying the roadmap and missing all of it.
+
+Now the **equipment structural contract**: the soldier, the item, slots and
+containers (resolved as one mechanism at different depths, not three special
+cases), derived loadouts, and how vehicles relate to all of it. It deliberately
+specifies no weapon catalogue.
+
+**A Stage 1 technical contract.** Also correct, and uncomfortably so: I had
+begun scaffolding Stage 1 when this arrived, and its questions — does "tick()"
+return events or append them, where do pending commands live, how is the seed
+represented — were exactly the ambiguities I would have answered by inventing
+something mid-implementation and then contradicting in another file. All now
+recorded as decisions.
+
+**A Stage 2 reference scenario.** Accepted. A feature list does not guarantee the
+experiment happens: if starting conditions never create contention, the priority
+control looks useless even when correctly implemented. The fixture now fixes
+personnel, jobs, capacities, and the condition under which the conflict is real.
+
+### What I pushed back on
+
+**It called the correction pass justified while also noting the checkpoint claims
+no further planning is scheduled.** Fair — but only because this pass was bounded
+by real contradictions rather than ambition. The recorded boundary now stands: a
+further pass must arrive naming a specific defect.
+
+**It did not flag that Stage 1 code had already started.** That was caught by the
+developer's interruption, not by the review. Its Stage 1 contract is worth far
+more *before* the first commit than after.
+
+### What did not change
+
+Autonomy and command by exception. The pure deterministic simulation. Causal
+explanations over log walls. Small stages with honest gates. Graduated
+consequences and persistent history. None were touched — which after three
+reviews is the strongest available evidence that the architecture is sound.
+
+---
+
 ## Reviews
 
-*(two received — see above)*
+*(three received — see above)*

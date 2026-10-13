@@ -73,33 +73,44 @@ cheap and is the one rule that pays for itself most often.
 
 ## 4. The tick loop
 
-`tick(state) → { state, events }`
+`tick(state, commands) → SimState`
 
-Ordering within a tick is fixed and deterministic. Proposed order:
+Ordering within a tick is fixed and deterministic, and defined as numbered
+**phases** in `SYSTEM_DEPENDENCIES.md` §4. That document is authoritative for
+phase numbers; this one explains why.
 
-1. Advance clock.
-2. Apply queued player decisions.
-3. Apply player intent to job priority resolution.
-4. Update needs (hunger, fatigue, and later hydration, morale).
-5. Update facilities and equipment (wear, availability).
-6. Run job selection (with hysteresis).
-7. Advance in-progress job progress.
-8. Apply resource consumption and production.
-9. Recompute readiness **as a derived summary**.
-10. Emit events for anything notable.
-11. Check for new decisions or interrupts.
+| # | Step | Why here |
+|---|---|---|
+| 1 | Advance clock | Everything is relative to time. |
+| 2 | Apply queued commands | Player commands land before anyone acts on them. A command issued last tick takes effect now, deterministically. |
+| 3 | Apply intent to priority resolution | Intent must be readable by job selection. |
+| 4 | Update facilities and items | Equipment wear affects whether a job is possible. |
+| 5 | Apply deliveries | **Deliveries before consumption.** |
+| 6 | Resource consumption and production | Consumes what just arrived. |
+| 7 | Update needs | Needs change, *then* people react to them. |
+| 8 | Job selection | Reads needs, availability, intent, items — all current. |
+| 9 | Advance job progress | Work completes. |
+| 10 | Relationships | Reads who worked with whom this tick. |
+| 11 | Recompute derived summaries | Readiness and morale summarise everything above. |
+| 12 | Check for new decisions | New situations arise from this tick's results. |
+
+**There is no "emit events" step.** Systems emit as they go, so an event can
+reference causes from earlier in the same tick. An earlier draft listed
+"emit events" as step 10 while also treating the event system as the *first*
+tier — incoherent. Events are a service, not a phase
+(`SYSTEM_DEPENDENCIES.md` §2).
 
 The order matters enormously and will be a common source of bugs. It is fixed
 in one function and never rearranged casually.
 
 **The order itself introduces biases and must be tested, not assumed correct.**
-Consuming a resource before applying a pending delivery gives a different result
-than the reverse, and neither is obviously right. Two named cases to cover from
-day one:
+Two named cases to cover from day one, both with a decision of record:
 
-- resource consumption vs. delivery arrival
-- need updates vs. job selection (does a worker decide before or after their
-  hunger changes this tick?)
+- resource consumption vs. delivery arrival → **delivery first**
+- need updates vs. job selection → **needs first**
+
+Both are argued in `SYSTEM_DEPENDENCIES.md` §6, along with the test each one
+requires.
 
 **Determinism:** the same seed and the same commands must produce an identical
 event log. Any use of `Date.now()`, `Math.random()`, or object key iteration
@@ -109,6 +120,28 @@ order in the simulation is a bug.
 before the UI repaints. Eight ticks per second does **not** mean eight React
 renders per second; the UI coalesces. This protects phone performance and
 changes nothing about determinism.
+
+### 4.0 The event-log contract
+
+An earlier draft wrote `tick(state) → { state, events }` while also storing
+`log[]` inside `SimState`. That is ambiguous: an event could be returned but
+never appended, or appended twice. **Resolved — the log is the only copy.**
+
+```ts
+function tick(state: SimState, commands: Command[]): SimState
+```
+
+- `state.log` is the single authoritative event history.
+- `tick` returns the **whole new state**. It does not return a separate event
+  array; callers read `newState.log`.
+- The new state is a new object. The previous one is untouched, which is what
+  makes time-travel debugging possible.
+- `tick` is pure: same input, same output. No I/O, no clock reads, no globals.
+- Commands are passed *in* and drained from `state.pendingCommands` on tick 1,
+  so the caller never mutates state to issue an order.
+
+UI code that wants to know what happened this tick reads the tail of the log.
+There is no other channel.
 
 ### 4.1 Readiness is derived, never an input
 

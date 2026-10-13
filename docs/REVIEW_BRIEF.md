@@ -12,10 +12,15 @@ needs reading, no prior conversation assumed.
 >
 > **The next action is Stage 1. No further planning pass is scheduled.**
 
-This project has been externally reviewed **twice**. Both reviews' findings,
-what was accepted and what was declined, are in **Part 10** — including three
-genuine contradictions the reviewers found in the plan, two of which this
-assistant had introduced while fixing an earlier review's advice.
+This project has been externally reviewed **three times**. All three reviews'
+findings, what was accepted and what was declined, are in **Part 10** — including
+**seven genuine contradictions** the reviewers found, **six of which this
+assistant had introduced itself** while fixing earlier advice.
+
+The third review verified four of its own catches against the documents before
+acting on them. All four were real. The dependency model was rebuilt, Chain A
+was split into two gates, and the project's defining feature was made
+guaranteed rather than droppable.
 
 ---
 
@@ -36,9 +41,10 @@ RimWorld in spirit, far smaller in scope.
 infinite sandbox.
 
 The developer's original interest was a base where personnel and equipment are
-**deeply inspectable** — soldiers, weapons, gear, vehicles. That is honoured:
-Stage 7 exists specifically for it, and it is the leading candidate at the
-Stage 6 evidence review.
+**deeply inspectable** — soldiers, weapons, gear, vehicles. That is honoured,
+and it is now **guaranteed rather than conditional** (D21): a game that quietly
+becomes a generic colony sim has lost the thing worth years of work. Stage 6
+now chooses what is added *beside* equipment, not whether equipment exists.
 
 ### The design test for the whole project
 
@@ -123,7 +129,7 @@ see Part 9.
 | **Phase** | Blueprint complete. Implementation not started |
 | **Code** | None. Empty directories and a `.gitignore` |
 | **Git** | Local commits only. Nothing pushed |
-| **External reviews** | Two, both acted upon |
+| **External reviews** | Three, all acted upon |
 | **Open questions** | **19** (Q16–Q35), each with a named stage that answers it |
 | **Next action** | Stage 1 — a simulation that ticks |
 | **Blocked on** | Nothing |
@@ -178,12 +184,25 @@ Three layers, dependencies downward only: **UI → Controller → Simulation.**
 
 Full detail: `ARCHITECTURE.md`, `SYSTEM_DEPENDENCIES.md`.
 
+**Three concepts, kept separate** *(corrected after the third review, which found
+the previous version stated two opposite rules three lines apart):*
+
+- **Ownership** — exactly one writer per field. The real protection against cycles.
+- **Phase** — *when* a system runs within a tick. Numbers are execution order.
+- **Service** — cross-cutting machinery (Time, RNG, Events, Commands) with no phase,
+  because a service cannot be both first and last.
+
+A system in phase N may read any field owned by a system in phase ≤ N. One rule,
+no exceptions. Systems never write another's field — they send a **request**, and
+the owner may refuse and record why.
+
 ---
 
 ## Part 6 — Roadmap
 
-Gates must test only what a stage can actually answer. Stages 6–10 are
-conditional.
+Gates must test only what a stage can actually answer.
+
+**Stage 7 is guaranteed** (D21). Stages 8–10 are conditional.
 
 | Stage | Content | Gate |
 |---|---|---|
@@ -192,10 +211,10 @@ conditional.
 | 2 | 6–8 people, 3 jobs, autonomous selection with reasons, **one priority** | **Watching them work is interesting**, and the priority visibly changed something |
 | 3 | Hunger, fatigue, resources, readiness summary, schedules, save/load | **Something can be lost, and you felt it** |
 | 4 | Named-option decisions, full intent, reports, timeline, relationships | **You made a choice and understood its effect** |
-| 5 | Anomalies, **commitments**, run history | **You want to play day 5** |
-| 6 | Evidence review — *a decision, not a build* | Chooses exactly one expansion |
-| 7 | Equipment and logistics *(conditional — leading candidate)* | The base is a world of **specific things**, not totals |
-| 8 | Production, workshop, engines *(conditional)* | The bottleneck is **people**, not throughput |
+| 5 | Anomalies, **commitments**, run history, **Chain A1** | **You want to play day 5** |
+| 6 | Evidence review — *a decision, not a build* | Chooses one expansion **besides** guaranteed equipment |
+| 7 | Equipment and logistics **(guaranteed — D21)** | The base is a world of **specific things**, and a loadout is inspectable |
+| 8 | Production, workshop, engines *(conditional)* — **Chain A2** | The bottleneck is **people**, not throughput |
 | 9 | Vehicles *(conditional)* | A dispatched vehicle can leave and not return |
 | 10 | Operations, threats *(parked — may never exist)* | An external threat is meaningful rather than arbitrary |
 
@@ -221,10 +240,38 @@ consequences, events, interface, tests, and stage. Every one has all eleven.
 one at a time. Morale is derived and must contribute something the underlying
 needs do not; if it does not, **cut it**.
 
-**Items — Stage 7, the leading candidate.** Individual condition, wear,
+**Items — Stage 7, and guaranteed (D21).** Individual condition, wear,
 reliability, assignment, inspection. **Work leaves persistent results:** a repair
-changes *that* item. This is the developer's original interest, and it has a
-defined place.
+changes *that* item.
+
+**Structural contract** *(added after review 3).* The interest is *inspection* —
+soldiers, helmets, clothing, pockets, durability, armour, weapons, loadouts — and
+a flat item list with a condition bar would satisfy the roadmap while missing all
+of it. So the guarantee is tied to a model, not to the word "equipment":
+
+- **Soldier** — identity, skills, needs, activity, *carried equipment*, *which
+  slots are filled, empty or blocked*, and **derived** effective capability.
+- **Item** — stable `id`, type, owner, physical location, condition, reliability,
+  **repair history** (a visible scar, not a bare number), required slot,
+  compatibility, consumable state.
+- **Slots and containers are one mechanism at different depths.** A soldier has
+  slots (primary weapon, sidearm, helmet, body armour, boots); clothing and
+  webbing are containers holding pockets or magazines, which are themselves
+  slots. Everything is an item; some items hold other items. This resolves the
+  "is a pocket a slot or an item?" ambiguity that would otherwise force three
+  special cases in Stage 7.
+- **Loadouts are derived, never stored.** The interface must show which slots are
+  filled, and which are empty, incompatible, broken, or held by someone else.
+- **Removal is not symmetric with addition.** Losing a capability must never be
+  silent.
+- **Vehicles** (Stage 9, may never ship) — crew are seats, cargo is mobile and
+  lost with the vehicle, mounted equipment is not carried equipment, and damage
+  changes what it can physically do. A vehicle is not a fuel bar with an
+  inventory attached.
+
+Full model: `GAME_DESIGN_BLUEPRINT.md`, "The equipment structural contract". It
+deliberately specifies **no weapon catalogue** — that is content, tuned once the
+systems exist.
 
 **Production — Stage 8.** Engines, fuel, manufacturing, repair-versus-produce.
 Intent: a production system whose **bottleneck is people**. The trap: the moment
@@ -239,21 +286,27 @@ additive and optional.
 
 ---
 
-## Part 8 — The five chains
+## Part 8 — The six chains
 
 The design's substance. Each is a testable scenario. Detail in
-`SYSTEM_DEPENDENCIES.md` §5.
+`SYSTEM_DEPENDENCIES.md` §7.
 
 | Chain | Shape |
 |---|---|
-| **A** — maintenance conflict | item degrades → worker contended → repair delayed → supply drops → meal missed |
+| **A1** — resource contention *(Stage 5 gate)* | work order due → worker contended → deferred → meal late → hunger rises → player traces it |
+| **A2** — equipment chain *(Stage 8 gate)* | A1, plus: item degrades → repair queue → repair beats meals → meal missed |
 | **B** — the specialist problem | one absence reshapes the whole day |
 | **C** — the reserve decision | spending now versus saving for later |
 | **D** — the departure | neglect compounds until someone leaves |
 | **E** — relationship consequence | who works together changes how fast |
 
-**Chain A is the reference chain.** If it cannot be demonstrated end-to-end by
-Stage 5, the game is not the game this project describes.
+**Chain A was split after the third review.** The original chain required items
+(Stage 7) and production (Stage 8), so demanding it by Stage 5 asked for a
+gate the roadmap could not pass. **A1** is now the Stage 5 reference scenario and
+**A2** the Stage 8 demonstration.
+
+The asymmetry matters: if A1 works and A2 does not, the game is still viable —
+a base simulation with real contention. The reverse is not acceptable.
 
 ---
 
@@ -261,8 +314,8 @@ Stage 5, the game is not the game this project describes.
 
 | Document | Contents |
 |---|---|
-| `GAME_DESIGN_BLUEPRINT.md` | **The System Atlas** — every system, 11 sections each |
-| `SYSTEM_DEPENDENCIES.md` | Ownership, tiers, tick order, 5 chains, 15 invariants |
+| `GAME_DESIGN_BLUEPRINT.md` | **The System Atlas** — 24 systems, all 11 sections, plus the equipment structural contract |
+| `SYSTEM_DEPENDENCIES.md` | Field-level ownership, phases, services, 6 chains, 19 invariants |
 | `ARCHITECTURE.md` | Technical foundation |
 | `LOCKED_DECISIONS.md` | The 12 decisions, with rationale and corrections |
 | `ROADMAP.md` | Stages, gates, questions passed forward |
@@ -296,14 +349,14 @@ It also made the observation this project now treats as its deepest risk:
 |---|---|
 | Readiness "never an input" *and* drove consequences — impossible as written | Split: conditions rule, readiness explains. No system may read it; now invariant #12. |
 | Stage 2's gate demanded evidence a Stage 4 system produced | Stage 2 gains one priority; the gate asks what it can answer |
-| Stage 6 chose by evidence; Stage 7 assumed the choice | Stage 6 is explicitly a decision; Stages 7–10 marked conditional |
+| Stage 6 chose by evidence; Stage 7 assumed the choice | Stage 6 is explicitly a decision; Stages 8–10 marked conditional |
 
 Also correct: commitments belonged in the roadmap (now Stage 5, ahead of
 achievements); several systems had no stage (now assigned); gates were applied
 uniformly (now per-stage).
 
 **Its main contribution:** the system dependency map — ownership rules, tier
-ordering, tick-order justifications, 15 invariants, and circular-dependency traps.
+ordering, tick-order justifications, invariants, and circular-dependency traps.
 
 **One disagreement recorded:** it treated combat as a likely eventual stage.
 This project treats it as **open** — a game whose threat is external cannot

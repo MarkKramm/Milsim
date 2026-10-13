@@ -89,9 +89,16 @@ export function parseArgs(argv: readonly string[]): HeadlessOptions {
 /**
  * A short deterministic digest of the log.
  *
- * FNV-1a over the event types and tick numbers. Small on purpose
- * (`ARCHITECTURE.md` §10): a golden file that changes on every inconsequential
- * edit gets abandoned, and an abandoned golden test is worse than none.
+ * **Scope: the event log only.** It hashes event types and tick numbers, so at
+ * Stage 1 it is identical for every seed — nothing in this stage consumes
+ * randomness, so the seed cannot affect the sequence. That is the correct
+ * behaviour, not a determinism failure, and this digest is deliberately *not*
+ * evidence that the seed is wired through; `src/sim/rng.test.ts` covers that.
+ * Once a system draws randomness, the digest will start varying with the seed.
+ *
+ * Small on purpose (`ARCHITECTURE.md` §10): a golden file that changes on every
+ * inconsequential edit gets abandoned, and an abandoned golden test is worse than
+ * none.
  */
 export function digestOf(log: ReadonlyArray<{ type: string; tick: number }>): string {
   let hash = 0x811c9dc5;

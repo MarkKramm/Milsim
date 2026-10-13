@@ -77,12 +77,21 @@ export class Controller {
 
   setSpeed(speed: SpeedName): void {
     if (speed === this.speed) return;
+    // Only a pause -> running transition may discard the paused interval. A
+    // running -> running change must NOT reset the frame baseline: doing so threw
+    // away every millisecond since the last frame, so tapping a speed button
+    // silently lost time and broke the "never discard accumulated time" contract.
+    // After a hidden-tab return it discarded the whole hidden interval, because no
+    // frame had run to bank it first.
+    const wasPaused = SPEEDS[this.speed] === 0;
     if (SPEEDS[speed] > 0) this.lastActiveTps = SPEEDS[speed];
     this.speed = speed;
-    // Resume must not replay whatever time passed while paused, so the baseline
-    // moves to now. Without this, the first frame after unpausing would carry the
-    // entire paused interval and jump the simulation forward.
-    this.lastFrameMs = now();
+    if (wasPaused) {
+      // Resume must not replay whatever time passed while paused, so the baseline
+      // moves to now. Without this, the first frame after unpausing would carry the
+      // entire paused interval and jump the simulation forward.
+      this.lastFrameMs = now();
+    }
     this.emit(true);
   }
 

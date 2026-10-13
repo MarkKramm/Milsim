@@ -16,6 +16,7 @@ import { useEffect, useState } from 'react';
 import { createController } from '../controller/controller';
 import type { Snapshot } from '../controller/controller';
 import { SPEEDS } from '../controller/timeline';
+import { TICKS_PER_DAY } from '../sim/time';
 import type { SpeedName } from '../controller/timeline';
 
 const SPEED_ORDER: SpeedName[] = ['pause', '1x', '4x', '16x'];
@@ -31,7 +32,7 @@ const SPEED_LABELS: Record<SpeedName, string> = {
 function dayLengthAt(speed: SpeedName): string {
   const tps = SPEEDS[speed];
   if (tps === 0) return 'paused';
-  return `${(1440 / tps).toFixed(tps === 8 ? 0 : 2)}s`;
+  return `${(TICKS_PER_DAY / tps).toFixed(tps === 8 ? 0 : 2)}s`;
 }
 
 export function App(): JSX.Element {
@@ -80,7 +81,7 @@ export function App(): JSX.Element {
       </div>
 
       <p className="hint">
-        A day is 1,440 minutes. At 1× it takes about {dayLengthAt('1x')}; at 16×,{' '}
+        A day is {TICKS_PER_DAY.toLocaleString()} minutes. At 1× it takes about {dayLengthAt('1x')}; at 16×,{' '}
         {dayLengthAt('16x')}.
         {' '}The RNG cursor stays at 0 because Stage 1 draws no randomness — that is correct, not a bug.
       </p>

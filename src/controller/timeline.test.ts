@@ -62,7 +62,7 @@ test('a huge elapsed interval is capped per frame and keeps the rest', () => {
   assert.ok(r.accumulatedMs > 0, 'the rest is still owed, not discarded');
 });
 
-test('the cap defers work but never loses it', () => {
+test('accumulated time is conserved even when the cap never engages', () => {
   // The no-loss invariant, stated exactly: every millisecond fed is either
   // already converted into a tick or still sitting in the accumulator. Asserting
   // "delivered == all ticks owed" would be wrong while a backlog exists — owed
@@ -86,12 +86,14 @@ test('the cap defers work but never loses it', () => {
   }
 
   // With 1000ms frames at 1x each frame is only owed 8 ticks, so the cap never
-  // binds and every frame delivers exactly what it earned.
+  // binds and every frame delivers exactly what it earned. That is deliberate:
+  // this test proves no time is lost to rounding, and the cap-binding cases are
+  // the two tests below.
   assert.equal(delivered, 1200 * 8);
   assert.equal(acc, 0, '1000ms is exactly 8 ticks at 1x, so no remainder carries');
 });
 
-test('a backlog drains at the cap when frames owe more than the cap', () => {
+test('the cap binds when a frame owes more than the cap', () => {
   // Feeding large deltas means each frame exceeds the cap, so the cap binds and
   // the backlog drains 240 ticks per frame rather than all at once.
   let acc = 0;

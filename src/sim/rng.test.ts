@@ -2,7 +2,7 @@ import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
 
 import { DEFAULT_SEED, advanceCursor, mulberry32, rand, toUint32 } from './rng';
-import { createRun, statesEqual } from './state';
+import { createRun, draftOf, statesEqual } from './state';
 
 /**
  * Expected values produced by the published Mulberry32 algorithm via an
@@ -85,4 +85,47 @@ test('different seeds are representable and coerced to uint32', () => {
 
 test('a fresh state is identical for identical seeds', () => {
   assert.ok(statesEqual(createRun(DEFAULT_SEED), createRun(DEFAULT_SEED)));
+});
+/**
+ * The next stages depend on this: a run that is saved, closed, and resumed must
+ * continue the same stream rather than restarting it. Verified by probe during
+ * the Stage 1 evidence audit and worth keeping as a committed test, because
+ * nothing else fails if `rand` is ever made to depend on state outside `SimState`.
+ */
+test('serialize and restore mid-stream, and the next draw still matches', () => {
+  const live = draftOf(createRun(DEFAULT_SEED));
+  rand(live);
+  rand(live);
+  rand(live);
+
+  const restored = JSON.parse(JSON.stringify(live)) as typeof live;
+
+  const afterRestore = rand(restored);
+  const uninterrupted = rand(live);
+
+  assert.equal(afterRestore, uninterrupted, 'the restored run diverged from the live one');
+  assert.equal(restored.rngCursor, live.rngCursor, 'cursors agree');
+});
+
+test('a 500-draw sequence is identical for identical seeds', () => {
+  const sequence = (seed: number, length: number): number[] => {
+    const draft = draftOf(createRun(seed));
+    return Array.from({ length }, () => rand(draft));
+  };
+
+  const a = sequence(DEFAULT_SEED, 500);
+  const b = sequence(DEFAULT_SEED, 500);
+  assert.deepEqual(a, b);
+});
+
+test('every draw differs between two seeds', () => {
+  const sequence = (seed: number, length: number): number[] => {
+    const draft = draftOf(createRun(seed));
+    return Array.from({ length }, () => rand(draft));
+  };
+
+  const a = sequence(DEFAULT_SEED, 500);
+  const b = sequence(1, 500);
+  const collisions = a.filter((value, i) => value === b[i]).length;
+  assert.equal(collisions, 0, 'two seeds produced colliding draws, so seed is not wired through');
 });

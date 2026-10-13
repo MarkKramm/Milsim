@@ -66,10 +66,16 @@ export function createRun(seed: number): SimState {
 /**
  * Copy a state into a fresh object to be mutated inside a tick.
  *
- * Arrays are copied rather than shared so appends cannot reach back into the
- * caller's state, and event objects are shared because they are immutable once
- * appended. This is what makes `tick()` provably non-mutating: the input and the
- * output share no mutable structure.
+ * Arrays are copied rather than shared, so appends cannot reach back into the
+ * caller's state. Event *objects* inside `log` are deliberately shared rather than
+ * cloned — cloning an ever-growing log on every tick would be quadratic for no
+ * benefit, since an appended event is never changed again.
+ *
+ * That makes the guarantee slightly narrower than "shares no mutable structure",
+ * and it is stated precisely here: **the input and the output share no mutable
+ * structure at the top level.** Nested event objects are shared, and are safe
+ * because `Event` is `readonly` and frozen at creation (`events.ts`), so neither a
+ * type error nor a runtime write can change one.
  */
 export function draftOf(state: SimState): SimState {
   return {

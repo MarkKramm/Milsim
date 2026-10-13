@@ -21,18 +21,28 @@ import type { SimState } from './state';
  */
 export type EventTier = 'routine' | 'notable' | 'critical';
 
+/**
+ * Every field is `readonly`.
+ *
+ * `draftOf` copies the log array but intentionally shares the event objects, to
+ * avoid cloning an ever-growing log on every tick. That is only safe because an
+ * event cannot be changed once appended — so this is enforced by the type system
+ * rather than left to convention. Attempting to write through a draft's event is
+ * a compile error, which is the point: silently corrupting a shared event would
+ * rewrite history, and the causal report depends on history being correct.
+ */
 export interface Event {
   /** Sequential, never reused. Causal references point at these. */
-  id: number;
+  readonly id: number;
   /** The tick this event belongs to, after the clock advanced. */
-  tick: number;
-  type: string;
-  tier: EventTier;
+  readonly tick: number;
+  readonly type: string;
+  readonly tier: EventTier;
   /** Person / job / facility / item ids this is about. Empty at Stage 1. */
-  subjects: string[];
+  readonly subjects: readonly string[];
   /** Event ids that caused this one. Invariant 6: must exist and be earlier. */
-  causeEventIds: number[];
-  data: Record<string, unknown>;
+  readonly causeEventIds: readonly number[];
+  readonly data: Readonly<Record<string, unknown>>;
 }
 
 /** The one event Stage 1 produces. */
@@ -55,15 +65,15 @@ export interface EmitInput {
  * call site remembering to do it.
  */
 export function emit(draft: SimState, input: EmitInput): Event {
-  const event: Event = {
+  const event: Event = Object.freeze({
     id: draft.nextEventId,
     tick: draft.tick,
     type: input.type,
     tier: input.tier,
-    subjects: input.subjects ?? [],
-    causeEventIds: input.causeEventIds ?? [],
-    data: input.data ?? {},
-  };
+    subjects: Object.freeze([...(input.subjects ?? [])]),
+    causeEventIds: Object.freeze([...(input.causeEventIds ?? [])]),
+    data: Object.freeze({ ...(input.data ?? {}) }),
+  });
   draft.log.push(event);
   draft.nextEventId += 1;
   return event;

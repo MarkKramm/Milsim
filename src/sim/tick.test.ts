@@ -99,15 +99,45 @@ test('the previous state stays usable after being ticked', () => {
   assert.equal(run(first, 1).tick, 2, 'ticking an old state still works');
 });
 
-test('draftOf shares no mutable structure with its source', () => {
+test('draftOf isolates the top level: arrays copied, scalars independent', () => {
+  // Previously named "shares no mutable structure with its source", which was
+  // false — and because it used an empty log it could not detect the sharing it
+  // claimed to rule out. It now says what it actually verifies.
   const original = createRun(DEFAULT_SEED);
   const draft = draftOf(original);
   draft.log.push({
     id: 0, tick: 0, type: 'x', tier: 'routine', subjects: [], causeEventIds: [], data: {},
   });
   draft.tick = 99;
-  assert.equal(original.log.length, 0);
-  assert.equal(original.tick, 0);
+  assert.notEqual(draft.log, original.log, 'the log array is copied');
+  assert.equal(original.log.length, 0, 'appending to the draft did not touch the original');
+  assert.equal(original.tick, 0, 'scalars are independent');
+});
+
+test('a shared event cannot be mutated, and the original is unaffected', () => {
+  // Regression test. `draftOf` shares event objects on purpose, so the guarantee
+  // that protects history is that an event is immutable — enforced by `readonly`
+  // at compile time and `Object.freeze` at runtime. This test proves the runtime
+  // half and shows the original state is untouched when the write is attempted.
+  //
+  // Before these protections, `draft.log[0].data.day = 999` silently changed the
+  // *original* state's event, which would rewrite history that the causal report
+  // depends on.
+  const state = run(createRun(DEFAULT_SEED), 1440);
+  assert.ok(state.log.length > 0, 'precondition: a non-empty log with a real event');
+
+  const draft = draftOf(state);
+  assert.equal(draft.log[0], state.log[0], 'event objects are intentionally shared');
+
+  assert.throws(() => {
+    (draft.log[0]!.data as Record<string, unknown>).day = 999;
+  }, TypeError, 'a frozen event rejects mutation at runtime');
+
+  assert.equal(
+    state.log[0]!.data.day,
+    2,
+    'the original state is unaffected even when the write is attempted',
+  );
 });
 
 test('state survives a JSON round-trip', () => {

@@ -164,6 +164,79 @@ test('a paused backlog is still reported as a backlog', () => {
   assert.ok(resumed.tick < 4800, 'the backlog was never fired in full');
 });
 
+/**
+ * Drive the controller through a real elapsed interval using an injected frame
+ * callback, then fire the next frame. `setSpeed` reads the real clock internally,
+ * so this needs real time rather than `step()` with a synthetic delta.
+ */
+function withRealClock(fn: (fire: () => void, controller: Controller) => void): void {
+  let cb: (t: number) => void = () => {};
+  const controller = new Controller({
+    speed: '1x',
+    schedule: (f) => {
+      cb = f;
+      return 1;
+    },
+    cancel: () => {},
+  });
+  controller.start();
+  cb(performance.now());
+  fn(() => cb(performance.now()), controller);
+}
+
+test('changing speed while running preserves the elapsed time so far', () => {
+  // Regression test for a confirmed defect. `setSpeed` used to reset the frame
+  // baseline on every speed change, so the interval since the last frame was
+  // discarded. Tapping 16x after 300ms at 1x advanced 0 ticks instead of ~38.
+  withRealClock((fire, controller) => {
+    const start = performance.now();
+    while (performance.now() - start < 300) { /* burn 300ms of real time */ }
+
+    controller.setSpeed('16x');
+    fire();
+
+    const ticks = controller.snapshot().tick;
+    // 300ms at 16x is ~38 ticks. The old bug produced 0.
+    assert.ok(ticks > 20, `elapsed time was discarded: only ${ticks} ticks ran`);
+  });
+});
+
+test('changing speed before the first frame after waking does not discard the idle gap', () => {
+  // The severe form of the same defect, and the one that matters on a phone.
+  //
+  // A hidden tab runs no frames, so the time since the last frame was never
+  // banked. If the player taps a speed button before the first frame after
+  // waking, resetting the frame baseline throws the whole hidden interval away.
+  //
+  // This must drive the *frame loop*, not `step()`: `step()` takes an explicit
+  // delta and never reads `lastFrameMs`, so a test written against `step()`
+  // cannot observe this defect at all. An earlier version of this test did
+  // exactly that and passed against the buggy code.
+  let cb: (t: number) => void = () => {};
+  const controller = new Controller({
+    speed: '1x',
+    schedule: (f) => {
+      cb = f;
+      return 1;
+    },
+    cancel: () => {},
+  });
+
+  controller.start();       // baseline is now
+  // No frame fires — this is the tab being hidden or the phone being asleep.
+  const idleStart = performance.now();
+  while (performance.now() - idleStart < 300) { /* idle 300ms with no frames */ }
+
+  controller.setSpeed('16x');
+  cb(performance.now());   // the first frame after waking
+
+  const ticks = controller.snapshot().tick;
+  assert.ok(
+    ticks > 20,
+    `the idle interval was discarded by the speed tap: only ${ticks} ticks ran`,
+  );
+});
+
 test('the simulation stays at cursor zero however long it runs', () => {
   const controller = new Controller({ speed: '16x' });
   for (let i = 0; i < 100; i += 1) controller.step(1000);

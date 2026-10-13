@@ -16,7 +16,7 @@ import { draftOf } from './state';
 import type { SimState } from './state';
 import { DAY_ROLLOVER, emit } from './events';
 import { applyCommands } from './commands';
-import { TICKS_PER_DAY, dayOf, isDayRollover } from './time';
+import { dayOf, isDayRollover } from './time';
 
 /**
  * `tick(state) → SimState` — the whole new state.
@@ -69,9 +69,4 @@ export function run(state: SimState, count: number): SimState {
     current = tick(current);
   }
   return current;
-}
-
-/** Ticks needed to reach the start of the next day, from `tick`. */
-export function ticksUntilNextDay(tickCount: number): number {
-  return TICKS_PER_DAY - (tickCount % TICKS_PER_DAY);
 }

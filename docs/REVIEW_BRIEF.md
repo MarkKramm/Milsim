@@ -1,5 +1,5 @@
 <!-- SYNCSTAMP -->
-<!-- v70c0303 | 455 lines | updated 2026-10-13 12:26 -->
+<!-- v6759255 | 456 lines | updated 2026-10-13 13:38 -->
 
 # Military Base Simulator — Project Checkpoint
 
@@ -10,7 +10,8 @@ needs reading, no prior conversation assumed.
 > Depth lives in `GAME_DESIGN_BLUEPRINT.md` (every system specified) and
 > `SYSTEM_DEPENDENCIES.md` (who owns what, and why the tick order is what it is).
 >
-> **The next action is Stage 1. No further planning pass is scheduled.**
+> **Stage 1 is built. See `CHANGELOG.md`. The next action is its manual gate on
+> the phone, then Stage 2.**
 
 This project has been externally reviewed **four times**. All four reviews'
 findings, what was accepted and what was declined, are in **Part 10** — including
@@ -127,13 +128,13 @@ see Part 9.
 
 | | |
 |---|---|
-| **Phase** | Blueprint complete. Stage 1 implementation planned, not started |
-| **Code** | Project scaffold only (`package.json`, `tsconfig.json`, empty `src/` dirs). No gameplay code |
-| **Git** | Private remote at `github.com/MarkKramm/Milsim`, CI green |
+| **Phase** | **Stage 1 built and verified** — a simulation that ticks |
+| **Code** | `src/sim` (pure), `src/controller`, `src/ui`, `tools/headless.ts`, 88 tests passing |
+| **Git** | Private remote at `github.com/MarkKramm/Milsim`; `docs` and `ci` workflows green |
 | **External reviews** | Four, all acted upon |
 | **Open questions** | **21** (Q16–Q37), each with a named stage that answers it |
-| **Next action** | Stage 1 — a simulation that ticks |
-| **Blocked on** | Three documented contradictions needing a decision (§10 of the Stage 1 plan) |
+| **Next action** | Stage 1 manual gate on the phone, then Stage 2 (people and jobs) |
+| **Blocked on** | Nothing |
 
 ---
 

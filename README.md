@@ -4,24 +4,28 @@ A living military base simulation. Personnel act autonomously, interconnected
 systems create persistent consequences, and the player commands **by
 exception** — setting policy, inspecting, and intervening only when it matters.
 
-**Status:** planning complete, implementation not started.
-**Next step:** Stage 1 — a simulation that ticks. See `docs/ROADMAP.md`.
+**Status:** Stage 1 implemented — a simulation that ticks. Stage 2 (people and
+jobs) is next. See `docs/ROADMAP.md`.
 
 ---
 
 ## Quick start
 
 ```bash
-# (once the project is scaffolded)
-pkg install nodejs-lts
 npm install
 npm run dev     # then open the printed URL in your phone browser
+```
+
+Everything at once (typecheck, tests, build, headless run):
+
+```bash
+npm run verify
 ```
 
 Headless simulation, no browser required:
 
 ```bash
-npm run headless -- --ticks 1440 --seed 12345
+npm run headless -- --ticks 1440 --seed 12345 [--json]
 ```
 
 ---
@@ -40,6 +44,9 @@ military-base-sim-dev/
     controller/    clock, speed, command dispatch
   tools/
     headless.ts    runs N ticks with no UI — the architecture smoke test
+  scripts/TERMUX.md  why npm scripts call node explicitly
+
+CHANGELOG.md          what changed, and when
 ```
 
 ---

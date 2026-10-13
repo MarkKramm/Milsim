@@ -1,0 +1,46 @@
+name: ci
+
+# Verifies the code. The `docs` workflow stays separate and keeps checking the
+# documents - the two jobs fail for different reasons and combining them would
+# mean a typo in a document could hide a broken simulation, or vice versa.
+#
+# These steps run the same commands a developer runs locally via `npm run verify`,
+# so green here means the same thing as green on the phone.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      # `npm ci` rather than `npm install`: it installs exactly the lockfile and
+      # fails if package.json and the lockfile disagree, which is what makes this
+      # reproducible rather than merely repeatable.
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Production build
+        run: node node_modules/vite/bin/vite.js build
+
+      # The architectural guardrail: the simulation must run in plain Node with no
+      # browser. Run in CI so a future change that breaks the pure-simulation rule
+      # cannot reach the phone unnoticed.
+      - name: Headless smoke test
+        run: npm run headless -- --ticks 1440 --seed 20260101

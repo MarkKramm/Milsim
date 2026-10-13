@@ -1,0 +1,117 @@
+/*
+ * Phone-first: the target device is a phone browser, and the whole panel has to
+ * stay legible and tappable one-handed. Large tap targets (48px) matter more
+ * than density here — the numbers change fast enough that small text is hard to
+ * read while watching.
+ */
+
+:root {
+  --bg: #12141a;
+  --fg: #e8eaf0;
+  --muted: #9aa3b2;
+  --accent: #4a9eff;
+  --line: #262b36;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-text-size-adjust: 100%;
+}
+
+.panel {
+  max-width: 30rem;
+  margin: 0 auto;
+  padding: 1.25rem 1rem calc(1.5rem + env(safe-area-inset-bottom));
+}
+
+h1 {
+  font-size: 1.6rem;
+  margin: 0 0 1rem;
+  letter-spacing: -0.01em;
+}
+
+.values {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0;
+  margin: 0 0 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: 0.6rem;
+  overflow: hidden;
+}
+
+.values dt,
+.values dd {
+  margin: 0;
+  padding: 0.7rem 0.9rem;
+  border-bottom: 1px solid var(--line);
+  font-variant-numeric: tabular-nums;
+}
+
+.values dt {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.values dd {
+  text-align: right;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+/* The last row must not draw a border inside the rounded corner. */
+.values dt:nth-last-of-type(1),
+.values dd:nth-last-of-type(1) {
+  border-bottom: none;
+}
+
+.speeds {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+}
+
+.speeds button {
+  min-height: 48px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--fg);
+  background: #1c202a;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  cursor: pointer;
+  /* Stop the double-tap-to-zoom delay on touch. */
+  touch-action: manipulation;
+}
+
+.speeds button.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #06121f;
+}
+
+.hint {
+  margin: 1.25rem 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f6f7f9;
+    --fg: #1a1d24;
+    --muted: #5a6270;
+    --line: #dde1e8;
+  }
+  .speeds button {
+    background: #fff;
+  }
+}

@@ -14,18 +14,17 @@ they are synced, and when each must be updated.
 
 ## Checkpoint
 
-**Last updated:** after four external reviews, a completed system blueprint, and a
-Stage 1 implementation plan. No gameplay code has been written.
+**Last updated:** after Stage 1 was implemented and verified.
 
 | | |
 |---|---|
-| **Phase** | Blueprint complete; Stage 1 planned, not started |
-| **Code** | Scaffold only — `package.json`, `tsconfig.json`, empty `src/` dirs. No gameplay code |
-| **Git** | Private remote at `github.com/MarkKramm/Milsim`, CI green |
+| **Phase** | Stage 1 built and verified — a simulation that ticks |
+| **Code** | `src/sim` (pure), `src/controller`, `src/ui`, `tools/headless.ts`, 88 tests |
+| **Git** | Private remote at `github.com/MarkKramm/Milsim`; `docs` and `ci` workflows green |
 | **External review** | Four received, audited, corrections applied |
 | **Blueprint** | Complete — all systems specified, dependencies mapped |
-| **Next action** | Stage 1 — a simulation that ticks |
-| **Blocked on** | Three documented contradictions needing a decision |
+| **Next action** | Stage 1 manual gate on the phone, then Stage 2 |
+| **Blocked on** | Nothing |
 
 ---
 
@@ -100,25 +99,30 @@ feature work, the architecture has broken — fix that first.
 military-base-sim-dev/
   AGENTS.md               <- you are here
   README.md
-  WORKING_AGREEMENT.md    <- how docs are maintained, synced, and shared
+  CHANGELOG.md            <- what changed, and when
+  scripts/TERMUX.md       <- why npm scripts call node explicitly
   .gitignore
   docs/                   all planning documents
   src/
-    sim/                  empty. the simulation. PURE.
-    ui/                   empty. React. no rules.
-    controller/           empty. clock, speed, commands
+    sim/                  the simulation. PURE. no UI, no DOM, no clock.
+    ui/                   React. no rules.
+    controller/           clock, speed, commands
   tools/
-                          empty. headless.ts goes here.
+    headless.ts           runs N ticks with no UI — the architecture smoke test
+  scripts/TERMUX.md       why npm scripts call node explicitly
+  CHANGELOG.md            what changed
 ```
 
-directories exist and are empty. `package.json` and `tsconfig.json` exist; the
-dependencies have never been installed.
+Dependencies are installed and `npm run verify` passes: typecheck, 88 tests,
+production build, and a 1,440-tick headless run. See `CHANGELOG.md` for what
+Stage 1 contains and which decisions were reached while writing it.
 
 ---
 
-## What to build next: Stage 1
+## What was built: Stage 1
 
 Deliberately trivial. It exists to validate the time model in one evening.
+Everything below is now implemented.
 
 - Scaffold Vite + TypeScript + React.
 - `src/sim/`: state shape, tick loop, seeded RNG, fixed tick order.
@@ -126,7 +130,7 @@ Deliberately trivial. It exists to validate the time model in one evening.
 - Minimal UI: one panel of live numbers.
 - Pause, 1×, 4×, 16× controls.
 
-**No people, no jobs, no needs yet.** Just a clock and numbers.
+**No people, no jobs, no needs.** Just a clock and numbers.
 
 **Gate to pass before Stage 2:** you watch the clock advance and the numbers
 move, and you understand them. Nothing more. This is a **technical** gate —
@@ -196,6 +200,8 @@ of a change plainly; do not silently alter scope.
 | `docs/SYSTEM_DEPENDENCIES.md` | Who owns what, tick order, 7 cross-system chains (A1, A2, B, C, D, E, F), 19 invariants |
 | `docs/LOCKED_DECISIONS.md` | The full decision set with rationale, including corrections from external review |
 | `docs/OPEN_QUESTIONS.md` | 21 open questions (Q16–Q37), each with the stage that answers it |
+| `docs/plans/STAGE1_PLAN_v4.md` | **The approved Stage 1 implementation spec** — what the code was built from |
+| `CHANGELOG.md` | What changed in the repository, and why |
 | `docs/ROADMAP.md` | Build order and evidence-based gates |
 | `docs/ARCHITECTURE.md` | Technical foundation, tick order, state shape, testing |
 | `docs/AUDIT_FINDINGS.md` | Completeness audit — what the later stages still lack |

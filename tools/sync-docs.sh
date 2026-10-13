@@ -67,6 +67,7 @@ fs.writeFileSync(f, s);
 # --- copy, preserving the three-tier layout --------------------------------
 cp docs/*.md "$MIRROR/"
 cp AGENTS.md README.md "$MIRROR/"
+[ -d docs/plans ] && cp -r docs/plans "$MIRROR/"
 [ -d docs/_reference ] && cp -r docs/_reference "$MIRROR/"
 [ -d docs/_archive ] && cp -r docs/_archive "$MIRROR/"
 
@@ -127,7 +128,7 @@ ACTIVE=$(cd docs && ls -1 *.md)
   echo "content matches the repository; Android may display a stale timestamp._"
 } > "$MIRROR/INDEX.md"
 
-chmod 644 "$MIRROR"/*.md "$MIRROR"/_reference/*.md "$MIRROR"/_archive/*.md 2>/dev/null || true
+chmod 644 "$MIRROR"/*.md "$MIRROR"/plans/*.md "$MIRROR"/_reference/*.md "$MIRROR"/_archive/*.md 2>/dev/null || true
 
 count=$(find "$MIRROR" -name '*.md' | wc -l | tr -d ' ')
 echo "synced $count files to $MIRROR"

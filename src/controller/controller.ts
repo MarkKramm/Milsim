@@ -17,7 +17,7 @@ import { createRun } from '../sim/state';
 import type { SimState } from '../sim/state';
 import { dayOf, elapsedInGameMinutes, periodOf } from '../sim/time';
 import { DEFAULT_SEED } from '../sim/rng';
-import { MAX_TICKS_PER_FRAME, SPEEDS, advance } from './timeline';
+import { MAX_TICKS_PER_FRAME, SPEEDS, advance, owedTicksAt } from './timeline';
 import type { SpeedName } from './timeline';
 
 /** Everything the UI is allowed to read. All of it derived, none of it authoritative. */
@@ -54,6 +54,9 @@ export class Controller {
   private running = false;
   private handle: number | null = null;
   private lastNotifyMs = 0;
+  // Last non-zero speed, so a paused backlog can still be measured: at 0 ticks/s
+  // a tick has no length and the backlog would otherwise always read as zero.
+  private lastActiveTps: number = SPEEDS["1x"];
   private eventsThisTick = 0;
   private backlogTicks = 0;
 
@@ -74,6 +77,7 @@ export class Controller {
 
   setSpeed(speed: SpeedName): void {
     if (speed === this.speed) return;
+    if (SPEEDS[speed] > 0) this.lastActiveTps = SPEEDS[speed];
     this.speed = speed;
     // Resume must not replay whatever time passed while paused, so the baseline
     // moves to now. Without this, the first frame after unpausing would carry the
@@ -131,9 +135,11 @@ export class Controller {
    * rather than only through a browser.
    */
   step(deltaMs: number): void {
-    const result = advance(this.accumulatedMs, deltaMs, SPEEDS[this.speed], MAX_TICKS_PER_FRAME);
+    const tps = SPEEDS[this.speed];
+    const result = advance(this.accumulatedMs, deltaMs, tps, MAX_TICKS_PER_FRAME);
     this.accumulatedMs = result.accumulatedMs;
-    this.backlogTicks = result.backlogTicks;
+    this.backlogTicks =
+      tps > 0 ? result.backlogTicks : owedTicksAt(this.accumulatedMs, this.lastActiveTps);
 
     const before = this.state.log.length;
     for (let i = 0; i < result.ticksToRun; i += 1) {

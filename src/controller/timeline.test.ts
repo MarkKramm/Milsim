@@ -138,40 +138,70 @@ test('a resume drains without firing the whole backlog at once', () => {
   const suspended = advance(0, 600_000, SPEEDS['1x'], CAP);
   let acc = suspended.accumulatedMs;
   let peak = 0;
-  for (let i = 0; i < 60; i += 1) {
-    const r = advance(acc, 100, SPEEDS['1x'], CAP);
+  // Deltas large enough that each frame genuinely wants more than the cap, so
+  // this asserts the cap actually binds rather than merely holding.
+  for (let i = 0; i < 40; i += 1) {
+    const r = advance(acc, 600_000, SPEEDS['1x'], CAP);
     acc = r.accumulatedMs;
     peak = Math.max(peak, r.ticksToRun);
   }
-  assert.ok(peak <= MAX_TICKS_PER_FRAME, `peak ${peak} exceeded the cap`);
+  assert.equal(peak, MAX_TICKS_PER_FRAME, 'the cap bound every frame');
+  assert.ok(peak < 4800, 'and the whole backlog never fired at once');
 });
 
-test('pausing mid-backlog then resuming still delivers everything', () => {
+test('pausing mid-backlog loses nothing and invents nothing', () => {
+  // The exact conservation invariant, with a real backlog present rather than an
+  // empty accumulator. Paused frames fed no time, so fedMs must not advance.
+  const msPerTick = 1000 / SPEEDS['1x'];
   const suspended = advance(0, 600_000, SPEEDS['1x'], CAP);
   let acc = suspended.accumulatedMs;
+  let delivered = suspended.ticksToRun;
+  let fedMs = 600_000;
 
-  // One frame, then pause for a while, then resume.
-  acc = advance(acc, 1000, SPEEDS['1x'], CAP).accumulatedMs;
-  for (let i = 0; i < 30; i += 1) acc = advance(acc, 1000, SPEEDS.pause, CAP).accumulatedMs;
+  const running = advance(acc, 1000, SPEEDS['1x'], CAP);
+  acc = running.accumulatedMs;
+  delivered += running.ticksToRun;
+  fedMs += 1000;
 
-  let delivered = 0;
-  for (let i = 0; i < 60 && i < 60; i += 1) {
+  const accBeforePause = acc;
+  for (let i = 0; i < 30; i += 1) {
+    const p = advance(acc, 1000, SPEEDS.pause, CAP);
+    assert.equal(p.ticksToRun, 0);
+    assert.equal(p.accumulatedMs, acc, 'paused frames must not move the accumulator');
+  }
+  assert.equal(acc, accBeforePause, '30 paused seconds left no trace');
+  assert.ok(Math.floor(acc / msPerTick) > 0, 'a real backlog survived the pause');
+
+  for (let i = 0; i < 1000; i += 1) {
     const r = advance(acc, 1000, SPEEDS['1x'], CAP);
     acc = r.accumulatedMs;
     delivered += r.ticksToRun;
+    fedMs += 1000;
   }
-  assert.ok(acc >= 0);
-  assert.ok(delivered > 0);
+
+  assert.ok(
+    Math.abs(delivered * msPerTick + acc - fedMs) < 1e-6,
+    'every fed millisecond is either delivered or still owed',
+  );
 });
 
 test('changing speed does not retroactively rewrite owed time', () => {
-  let acc = advance(0, 1000, SPEEDS['1x'], CAP).accumulatedMs;
-  const owed = Math.floor(acc / 125);
-  // Switch to 16x: the same 1000ms is now worth more ticks, but nothing already
-  // owed is altered — the accumulator is untouched by the speed change.
+  // 1100ms at 1x is 8 whole ticks with 100ms genuinely still owed, so there is a
+  // real remainder for a speed change to potentially disturb.
+  let acc = advance(0, 1100, SPEEDS['1x'], CAP).accumulatedMs;
+  assert.equal(acc, 100, '100ms of fractional time is carried, not rounded away');
+
+  // Switching to 16x does not rewrite time that is already owed. The accumulator
+  // is denominated in milliseconds, so the carried 100ms is intact; what changes
+  // is how many whole ticks it is worth — 100ms was 0 ticks at 1x and is 12 at
+  // 16x, with the sub-tick remainder still carried.
   const at16 = advance(acc, 0, SPEEDS['16x'], CAP);
-  assert.equal(at16.accumulatedMs, acc);
-  assert.ok(owed >= 0);
+  assert.equal(at16.ticksToRun, 12, '100ms is now worth 12 whole ticks at 16x');
+  assert.ok(
+    Math.abs(at16.ticksToRun * (1000 / SPEEDS['16x']) + at16.accumulatedMs - 100) < 1e-6,
+    'all 100ms is either delivered or still carried — none lost or invented',
+  );
+  assert.equal(at16.accumulatedMs, 6.25);
 });
 
 test('the cap never makes the controller run faster than the cap', () => {

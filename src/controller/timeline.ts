@@ -67,7 +67,14 @@ export function advance(
   if (ticksPerSecond <= 0) {
     // Paused: zero ticks, and the accumulator is returned untouched so a backlog
     // that existed before the pause survives it.
-    return { ticksToRun: 0, accumulatedMs, backlogTicks: owedTicks(accumulatedMs, ticksPerSecond) };
+    //
+    // `backlogTicks` is 0 here because a tick's length in milliseconds is
+    // undefined at 0 ticks/second — there is no rate to measure against. Callers
+    // that want to show the paused backlog (the controller does) measure it with
+    // `owedTicksAt` at the speed that will be used on resume. Reporting a number
+    // derived from the current rate would always be 0, which reads as "no backlog"
+    // when one may well be banked.
+    return { ticksToRun: 0, accumulatedMs, backlogTicks: 0 };
   }
 
   const msPerTick = 1000 / ticksPerSecond;
@@ -84,7 +91,13 @@ export function advance(
   };
 }
 
-function owedTicks(accumulatedMs: number, ticksPerSecond: number): number {
+/**
+ * Whole ticks owed by an accumulator, measured at a given rate.
+ *
+ * Used to report a paused backlog, which cannot be derived from the paused rate
+ * of 0 ticks/second.
+ */
+export function owedTicksAt(accumulatedMs: number, ticksPerSecond: number): number {
   if (ticksPerSecond <= 0) return 0;
   return Math.floor(accumulatedMs / (1000 / ticksPerSecond));
 }

@@ -137,6 +137,33 @@ test('speed changes notify immediately even inside the cadence window', () => {
   assert.equal(speeds[speeds.length - 1], '16x');
 });
 
+test('a paused backlog is still reported as a backlog', () => {
+  // Regression guard. `advance` cannot measure a backlog at 0 ticks/s, because a
+  // tick has no length there; the controller measures it at the speed that will be
+  // used on resume. Before that, this read 0 while a real backlog was banked.
+  const controller = new Controller({ speed: '1x' });
+  controller.step(600_000); // 4800 owed, 240 run, backlog banked
+  const running = controller.snapshot();
+  assert.ok(running.backlogTicks > 0);
+
+  controller.setSpeed('pause');
+  const paused = controller.snapshot();
+  assert.equal(paused.tick, running.tick, 'paused ticks nothing');
+  assert.ok(
+    paused.backlogTicks > 0,
+    'the paused backlog must still be visible, not reported as zero',
+  );
+
+  controller.setSpeed('1x');
+  controller.step(0); // resume with a reset baseline
+  const resumed = controller.snapshot();
+  // Resuming begins draining the banked backlog, bounded by the per-frame cap.
+  // What must not happen is the paused interval being replayed as elapsed time,
+  // which would run thousands of ticks here.
+  assert.equal(resumed.tick, running.tick + 240, 'one capped frame of catch-up');
+  assert.ok(resumed.tick < 4800, 'the backlog was never fired in full');
+});
+
 test('the simulation stays at cursor zero however long it runs', () => {
   const controller = new Controller({ speed: '16x' });
   for (let i = 0; i < 100; i += 1) controller.step(1000);

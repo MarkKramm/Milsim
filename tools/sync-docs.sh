@@ -20,6 +20,27 @@ cd "$REPO"
 find "$MIRROR" -name '*.md' -delete 2>/dev/null || true
 rm -rf "$MIRROR/_archive" "$MIRROR/_reference" 2>/dev/null || true
 
+# --- stamp the brief so a stale copy is obvious at a glance ----------------
+# When this document is pasted into another assistant there is no upload
+# history, so a model reasoning from a months-old copy looks exactly like one
+# reasoning from the current one. A dated line the reader can compare makes
+# that visible immediately, which matters more than any prompt instruction.
+cd "$REPO"
+git rev-parse --short HEAD >/dev/null 2>&1 || true
+STAMP_REV=$(git rev-parse --short HEAD 2>/dev/null || echo "uncommitted")
+STAMP_WHEN=$(date '+%Y-%m-%d %H:%M')
+
+tmp_lines=$(wc -l < docs/REVIEW_BRIEF.md | tr -d ' ')
+node -e '
+const fs = require("fs");
+const f = "docs/REVIEW_BRIEF.md";
+const [rev, when, n] = process.argv.slice(1);
+let s = fs.readFileSync(f, "utf8");
+s = s.replace(/<!-- v__V__ \| __N__ lines \| updated __WHEN__ -->/,
+  `<!-- v${rev} | ${n} lines | updated ${when} -->`);
+fs.writeFileSync(f, s);
+' "$STAMP_REV" "$STAMP_WHEN" "$tmp_lines"
+
 # --- copy, preserving the three-tier layout --------------------------------
 cp docs/*.md "$MIRROR/"
 cp AGENTS.md README.md "$MIRROR/"
@@ -76,7 +97,7 @@ ACTIVE=$(cd docs && ls -1 *.md)
   echo
   echo "---"
   echo
-  echo "_Last synced: $(date '+%Y-%m-%d %H:%M %Z'). Files are current if the"
+  echo "_Last synced: $(date '+%Y-%m-%d %H:%M %Z'), commit $STAMP_REV. Files are current if the"
   echo "content matches the repository; Android may display a stale timestamp._"
 } > "$MIRROR/INDEX.md"
 

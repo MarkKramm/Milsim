@@ -1,3 +1,6 @@
+<!-- SYNCSTAMP -->
+<!-- v8b8a2d6 | 368 lines | updated 2026-10-13 08:59 -->
+
 # Military Base Simulator — Project Checkpoint
 
 **Everything about this project in one file.** Self-contained: no other document

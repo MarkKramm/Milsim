@@ -35,14 +35,14 @@ jobs:
           # worse than no check at all. Assert on the built output instead.
           fail=0
 
-          for f in PROJECT_MASTER.md PROJECT_CORE.md; do
+          for f in docs/PROJECT_MASTER.md docs/PROJECT_CORE.md; do
             [ -s "$f" ] || { echo "::error::$f was not built"; fail=1; continue; }
           done
 
           # Every current document must appear as a merged section.
           while read -r doc; do
-            if ! grep -q "^# ── ${doc}$" PROJECT_MASTER.md; then
-              echo "::error::PROJECT_MASTER.md is missing a section for ${doc}"
+            if ! grep -q "^# ── ${doc}.md$" docs/PROJECT_MASTER.md; then
+              echo "::error::docs/PROJECT_MASTER.md is missing a section for ${doc}"
               fail=1
             fi
           done <<'EOF'
@@ -68,7 +68,7 @@ jobs:
                      DECISIONS_TO_APPROVE FOUNDATION_DECISIONS GAME_VISION \
                      IMPLEMENTATION_STAGES LONG_TERM_DESIGN MASTER_PROMPT \
                      ORIGINAL_PLANNING_PACK PROTOTYPE_SPEC; do
-            for f in PROJECT_MASTER.md PROJECT_CORE.md; do
+            for f in docs/PROJECT_MASTER.md docs/PROJECT_CORE.md; do
               if grep -q "^# ── ${doc}.md$" "$f"; then
                 echo "::error::$f merges archived content: ${doc}.md"
                 fail=1
@@ -106,7 +106,7 @@ jobs:
           # The generated bundles must keep excluding docs/_archive. Its
           # contents predate the reviews and contain answers that were later
           # reversed, so including them makes a consistent design look broken.
-          for f in PROJECT_MASTER.md PROJECT_CORE.md; do
+          for f in docs/PROJECT_MASTER.md docs/PROJECT_CORE.md; do
             if grep -q "_archive/LONG_TERM_DESIGN" "$f"; then
               echo "::error::$f contains archived content. Archive files must stay out of the bundles."
               exit 1

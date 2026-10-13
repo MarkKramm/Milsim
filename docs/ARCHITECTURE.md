@@ -54,16 +54,33 @@ interface SimState {
   seed: number;              // master seed for the run
   rngCursor: number;         // position in the seeded stream
   tick: number;              // 1 tick = 1 in-game minute
-  personnel: Person[];
-  jobs: Job[];
-  facilities: Facility[];
-  resources: Record<string, number>;
-  readiness: ReadinessBreakdown;  // derived summary, never an input (see §4.1)
-  playerIntent: Intent[];         // policies set by the player (see §4.2)
-  pendingDecisions: Decision[];
+  nextEventId: number;       // Events owns log[] and nextEventId
   log: Event[];              // appended, never mutated
+  pendingCommands: Command[]; // queue, drained at tick step 2 (see §4.0)
+  intent: Intent[];          // policies set by the player (see §4.2)
+  personnel: Person[];       // Stage 2
+  jobs: Job[];               // Stage 2
+  facilities: Facility[];    // Stage 2
+  storage: Storage[];        // Stage 7 — owns holdings; `resources` is derived
+  items: Item[];             // Stage 7
+  decisions: Decision[];     // Stage 4
 }
 ```
+
+> **Corrected after the fourth external review and a Stage 1 plan review.** The
+> earlier shape omitted `pendingCommands` and `nextEventId`, which the event and
+> command contracts both require, and listed `readiness` as stored state when §3
+> of `SYSTEM_DEPENDENCIES.md` says it is derived and **never persisted**. It also
+> listed `resources` as its own field, before Storage and Resources were split.
+
+**Readiness is not in this shape, and that is deliberate.** It is recomputed from
+underlying conditions every tick and never stored, so no system can read a stale
+copy (§4.1). `resources` is likewise absent — it is a derived aggregate over
+`storage[]`, not a field anyone owns.
+
+**Fields appear when their owning system arrives.** The stages in comments are
+when each field first exists in state. A Stage 1 run therefore holds only the
+first seven, and that is correct rather than incomplete.
 
 **Serialization constraint:** nothing in `SimState` may be a class instance,
 function, `Map`, `Set`, or `Date`. Plain data only. This is what makes save/load
@@ -73,7 +90,8 @@ cheap and is the one rule that pays for itself most often.
 
 ## 4. The tick loop
 
-`tick(state, commands) → SimState`
+`tick(state) → SimState` — commands arrive through `state.pendingCommands[]`,
+not as an argument (see §4.0).
 
 Ordering within a tick is fixed and deterministic, and defined as numbered
 **phases** in `SYSTEM_DEPENDENCIES.md` §4. That document is authoritative for
@@ -81,7 +99,7 @@ phase numbers; this one explains why.
 
 | # | Step | Why here |
 |---|---|---|
-| 1 | Advance clock | Everything is relative to time. |
+| 1 | Advance clock, then check for day rollover | Everything is relative to time. Rollover is checked **immediately after the tick advances and before commands are applied**, because it depends only on the clock. Tick 0 emits nothing. |
 | 2 | Apply queued commands | Player commands land before anyone acts on them. A command issued last tick takes effect now, deterministically. |
 | 3 | Apply intent to priority resolution | Intent must be readable by job selection. |
 | 4 | Update facilities and items | Equipment wear affects whether a job is possible. |
@@ -128,7 +146,8 @@ An earlier draft wrote `tick(state) → { state, events }` while also storing
 never appended, or appended twice. **Resolved — the log is the only copy.**
 
 ```ts
-function tick(state: SimState, commands: Command[]): SimState
+function tick(state: SimState): SimState
+function enqueue(state: SimState, command: Command): SimState
 ```
 
 - `state.log` is the single authoritative event history.
@@ -137,8 +156,23 @@ function tick(state: SimState, commands: Command[]): SimState
 - The new state is a new object. The previous one is untouched, which is what
   makes time-travel debugging possible.
 - `tick` is pure: same input, same output. No I/O, no clock reads, no globals.
-- Commands are passed *in* and drained from `state.pendingCommands` on tick 1,
-  so the caller never mutates state to issue an order.
+- **Commands live in `state.pendingCommands[]` and nowhere else.** `enqueue`
+  returns a new state with the command appended; `tick` drains the queue at
+  step 2 and empties it.
+
+> **Corrected after a Stage 1 plan review.** An earlier draft of this section
+> showed `tick(state, commands)` taking commands as a parameter *while* also
+> saying they were "drained from `state.pendingCommands`". Both cannot be true,
+> and the ambiguity is dangerous rather than merely untidy: a caller that both
+> enqueues a command and passes it would have it applied **twice**.
+>
+> The queue is the only source of truth, for a concrete reason rather than
+> tidiness — the Stage 1 contract requires orders to be *persisted with state*,
+> so a run saved mid-flight resumes with unissued orders intact (D15). A
+> function parameter is not persisted, so it cannot be the primary channel.
+>
+> The parameter was therefore removed. `tick(state)` reads the queue and nothing
+> else, and one code path owns every command in the system.
 
 UI code that wants to know what happened this tick reads the tail of the log.
 There is no other channel.

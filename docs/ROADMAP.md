@@ -126,14 +126,14 @@ Questions that must be answered before the first commit, with their answers:
 | Displayed day | **`floor(tick / 1440) + 1`.** Tick 0 shows "Day 1". There is no Day 0 — a run has no day before it begins. |
 | First displayed period | **Night.** A day starts at 00:00, which is night. |
 | Period boundaries | Night 0–5, Morning 6–11, Afternoon 12–17, Evening 18–23, by minute-of-day. Abstract only — never a clock. |
-| Day rollover event | Emitted at the tick where `tick % 1440 === 0`, tier `routine`, data `{ day }`. |
+| Day rollover event | Emitted **immediately after the clock advances**, before commands are applied: if the new `tick > 0 && tick % 1440 === 0`, append a tier `routine` event, data `{ day }`. Tick 0 does **not** emit one — it is the start of Day 1, not the completion of a day. |
 | Values shown in the UI | Day + period, tick, seed, `rngCursor`, elapsed in-game minutes, events appended this tick, log length. All read-only. |
 | What makes them move | Tick advances → day/period derive. Cursor advances only via `rand()`. Stage 1 emits no randomness by design, so the cursor should stay at 0 — **that is the correct behaviour, not a bug.** |
 | RNG algorithm | **Mulberry32**, 32-bit, seeded from `seed`. Chosen for being 5 lines, well-distributed, and trivially portable — the property that matters, since replay compatibility is permanent. |
 | Seed representation | A 32-bit unsigned integer. Displayed as decimal. Default `20260101` (readable, and not a magic constant anyone will confuse for a real date). |
-| Where commands live | `state.pendingCommands[]`, drained at tick step 2, then emptied. Persisted with state, so a saved run resumes with unissued orders intact. |
+| Where commands live | `state.pendingCommands[]` **only**, and nowhere else. `enqueue(state, cmd)` appends by returning a new state; `tick(state)` takes **no** commands parameter and drains the queue at tick step 2. Corrected after a Stage 1 plan review: an earlier version had commands arriving as a parameter *and* living in the queue, which would have applied them twice. The queue is persisted with state, so a saved run resumes with unissued orders intact. |
 | Event log | Single copy in `state.log`; `tick()` returns the new state, not a separate array. See `ARCHITECTURE.md` §4.0. |
-| Background throttling | Browsers freeze `setInterval` in background tabs. **The simulation is driven by accumulated wall-clock time, not by counting callbacks** — so a throttled or resumed tab produces the *same* ticks for the same elapsed time, and pausing on `visibilitychange` is a UI affordance, not a correctness requirement. |
+| Background throttling | Browsers freeze `setInterval` in background tabs, so the simulation is driven by **accumulated wall-clock time**, never by counting callbacks. The rule: **never discard accumulated time.** A per-frame cap on how many ticks execute limits a burst without losing the backlog — the remainder stays queued and drains on later frames. Clamping the measured elapsed time, by contrast, *is* loss and is forbidden. Auto-pausing on `visibilitychange` is an optional UI affordance, not a correctness requirement. |
 
 **The throttling decision matters more than it looks.** A naive
 `setInterval` loop produces *fewer* ticks after a background suspension, and a

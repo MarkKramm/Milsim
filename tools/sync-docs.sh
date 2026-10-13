@@ -20,6 +20,11 @@ cd "$REPO"
 find "$MIRROR" -name '*.md' -delete 2>/dev/null || true
 rm -rf "$MIRROR/_archive" "$MIRROR/_reference" 2>/dev/null || true
 
+# --- rebuild the single-file bundles before they are copied --------------
+# Regenerated here rather than committed, so a sync can never ship a bundle
+# describing an older commit than the documents sitting beside it.
+tools/build-master.sh
+
 # --- stamp the brief so a stale copy is obvious at a glance ----------------
 # When this document is pasted into another assistant there is no upload
 # history, so a model reasoning from a months-old copy looks exactly like one
@@ -68,11 +73,13 @@ ACTIVE=$(cd docs && ls -1 *.md)
   echo "| \`ARCHITECTURE.md\` | Technical foundation — layering, tick order, testing |"
   echo "| \`AUDIT_FINDINGS.md\` | Completeness audit — what the later stages still lack |"
   echo "| \`REVIEW_REPLIES.md\` | All three external reviews: accepted, declined, why |"
+  echo "| \`PROJECT_MASTER.md\` | **Generated — upload this alone.** Every document above in one file |"
+  echo "| \`PROJECT_CORE.md\` | **Generated.** The essentials only, half the size |"
   echo
   echo "## To send another assistant"
   echo
-  echo "Upload \`REVIEW_BRIEF.md\` first; it is self-contained. Add"
-  echo "\`GAME_DESIGN_BLUEPRINT.md\` when depth is wanted. The rest on request."
+  echo "**Upload \`PROJECT_MASTER.md\` alone** — it contains every document listed"
+  echo "above, in one file. If it is rejected for size, upload \`PROJECT_CORE.md\`."
   echo
   echo "## \_reference — current, not for external review"
   echo

@@ -24,3 +24,8 @@ run-*.json
 # logs
 *.log
 npm-debug.log*
+# generated bundles - rebuilt by tools/build-master.sh on every sync
+PROJECT_MASTER.md
+PROJECT_CORE.md
+docs/PROJECT_MASTER.md
+docs/PROJECT_CORE.md

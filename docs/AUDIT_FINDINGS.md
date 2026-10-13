@@ -146,7 +146,7 @@ are thin because they were assumed simple — but "resources" is not a number,
 ## 7. Two smaller inconsistencies
 
 **Combined interrupt rate is not bounded.** Individual systems throttle
-themselves — true interrupts are capped at ~1 per in-game day (D8) — but three
+themselves — true interrupts are capped at ~1 per in-game day (D16) — but three
 systems generate interruptions (decisions, anomalies, commitments). Nothing
 bounds the *combined* rate. Interrupt fatigue is the characteristic failure mode
 of this genre.

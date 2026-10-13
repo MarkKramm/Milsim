@@ -14,18 +14,18 @@ they are synced, and when each must be updated.
 
 ## Checkpoint
 
-**Last updated:** after two external reviews and a completed system blueprint.
-No code has been written yet.
+**Last updated:** after four external reviews, a completed system blueprint, and a
+Stage 1 implementation plan. No gameplay code has been written.
 
 | | |
 |---|---|
-| **Phase** | Planning complete, implementation not started |
-| **Code** | None. Only empty directories and a `.gitignore` |
-| **Git** | Local commits only, nothing pushed |
-| **External review** | Two received, audited, corrections applied |
-| **Blueprint** | Complete - all systems specified, dependencies mapped |
+| **Phase** | Blueprint complete; Stage 1 planned, not started |
+| **Code** | Scaffold only — `package.json`, `tsconfig.json`, empty `src/` dirs. No gameplay code |
+| **Git** | Private remote at `github.com/MarkKramm/Milsim`, CI green |
+| **External review** | Four received, audited, corrections applied |
+| **Blueprint** | Complete — all systems specified, dependencies mapped |
 | **Next action** | Stage 1 — a simulation that ticks |
-| **Blocked on** | Nothing. Stage 1 can begin immediately |
+| **Blocked on** | Three documented contradictions needing a decision |
 
 ---
 
@@ -52,10 +52,10 @@ They are called **settled**, not locked: the developer approved most by trusting
 a recommendation rather than by item-by-item confirmation, so any can be
 revisited. See the note at the top of that file.
 
-Two external reviews have been completed and their corrections applied - see
-`docs/REVIEW_REPLIES.md`. Between them they found five genuine errors in this
-plan, three of them contradictions introduced while fixing the first review.
-Do not reintroduce them. The most important: **readiness is a pure summary that
+Four external reviews have been completed and their corrections applied - see
+`docs/REVIEW_REPLIES.md`. Between them they found eleven genuine errors in this
+plan, eight of them contradictions introduced while fixing earlier reviews. Do not
+reintroduce any of them. The most important: **readiness is a pure summary that
 no system may read** - the underlying conditions drive behaviour. Enforced as
 invariant 12 in `SYSTEM_DEPENDENCIES.md`.
 
@@ -111,7 +111,8 @@ military-base-sim-dev/
                           empty. headless.ts goes here.
 ```
 
-Directories exist; they are empty. No `package.json` yet.
+directories exist and are empty. `package.json` and `tsconfig.json` exist; the
+dependencies have never been installed.
 
 ---
 
@@ -190,21 +191,21 @@ of a change plainly; do not silently alter scope.
 
 | File | Contents |
 |---|---|
-| `docs/REVIEW_BRIEF.md` | **The one file to send another assistant** — self-contained: history, decisions, architecture, roadmap, risks, and both reviews |
+| `docs/REVIEW_BRIEF.md` | **The one file to send another assistant** — self-contained: history, decisions, architecture, roadmap, risks, and all four reviews |
 | `docs/GAME_DESIGN_BLUEPRINT.md` | **The system atlas** — 24 systems, all 11 sections each |
-| `docs/SYSTEM_DEPENDENCIES.md` | Who owns what, tick order, 5 cross-system chains, 15 invariants |
+| `docs/SYSTEM_DEPENDENCIES.md` | Who owns what, tick order, 7 cross-system chains (A1, A2, B, C, D, E, F), 19 invariants |
 | `docs/LOCKED_DECISIONS.md` | The full decision set with rationale, including corrections from external review |
 | `docs/OPEN_QUESTIONS.md` | 21 open questions (Q16–Q37), each with the stage that answers it |
 | `docs/ROADMAP.md` | Build order and evidence-based gates |
 | `docs/ARCHITECTURE.md` | Technical foundation, tick order, state shape, testing |
 | `docs/AUDIT_FINDINGS.md` | Completeness audit — what the later stages still lack |
-| `docs/REVIEW_REPLIES.md` | Both external reviews, what was accepted, what was declined, and why |
+| `docs/REVIEW_REPLIES.md` | All four external reviews, what was accepted, what was declined, and why |
 | `docs/_reference/PROJECT_SUMMARY.md` | One-page orientation |
 | `docs/_reference/WORKING_AGREEMENT.md` | Where docs live, how to sync them, when to update what |
 
 ### Archive — superseded, kept for audit
 
-**Do not send these to another assistant.** They predate both reviews and contain
+**Do not send these to another assistant.** They predate the reviews and contain
 older answers to questions since resolved differently; including them makes a
 current design look self-contradictory.
 
@@ -223,7 +224,7 @@ current design look self-contradictory.
 
 You can be given `docs/REVIEW_BRIEF.md` instead of this file. It is fully
 self-contained: project context, all locked decisions, architecture, roadmap,
-known risks, and 20 open questions to answer. Send that one file and nothing
+known risks, and 21 open questions to answer. Send that one file and nothing
 else. The most useful contributions:
 
 - Build Stage 1 exactly as specified.

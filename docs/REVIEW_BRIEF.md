@@ -12,15 +12,15 @@ needs reading, no prior conversation assumed.
 >
 > **The next action is Stage 1. No further planning pass is scheduled.**
 
-This project has been externally reviewed **three times**. All three reviews'
+This project has been externally reviewed **four times**. All four reviews'
 findings, what was accepted and what was declined, are in **Part 10** — including
-**seven genuine contradictions** the reviewers found, **six of which this
+**eleven genuine contradictions** the reviewers found, **eight of which this
 assistant had introduced itself** while fixing earlier advice.
 
-The third review verified four of its own catches against the documents before
-acting on them. All four were real. The dependency model was rebuilt, Chain A
-was split into two gates, and the project's defining feature was made
-guaranteed rather than droppable.
+The third and fourth reviews each verified their catches against the documents
+before acting on them, and all were real. The dependency model was rebuilt, Chain A
+was split into two gates, the tick order was made phase-monotonic, and the project's
+defining feature was made guaranteed rather than droppable.
 
 ---
 
@@ -105,7 +105,8 @@ explicit note that any can be revisited. Preserved through both reviews.
 - A permanent split adopted: **docs mirrored to shared storage** for phone
   reading, **code in Termux home** where `node_modules` is fast and file
   watching works.
-- Git initialised locally. Nothing pushed — **no off-device backup exists**.
+- Git initialised locally, then made a **private remote** backup at
+  `github.com/MarkKramm/Milsim`.
 
 ### 2.6 Review 1
 
@@ -126,13 +127,13 @@ see Part 9.
 
 | | |
 |---|---|
-| **Phase** | Blueprint complete. Implementation not started |
-| **Code** | None. Empty directories and a `.gitignore` |
-| **Git** | Local commits only. Nothing pushed |
-| **External reviews** | Three, all acted upon |
+| **Phase** | Blueprint complete. Stage 1 implementation planned, not started |
+| **Code** | Project scaffold only (`package.json`, `tsconfig.json`, empty `src/` dirs). No gameplay code |
+| **Git** | Private remote at `github.com/MarkKramm/Milsim`, CI green |
+| **External reviews** | Four, all acted upon |
 | **Open questions** | **21** (Q16–Q37), each with a named stage that answers it |
 | **Next action** | Stage 1 — a simulation that ticks |
-| **Blocked on** | Nothing |
+| **Blocked on** | Three documented contradictions needing a decision (§10 of the Stage 1 plan) |
 
 ---
 
@@ -320,13 +321,13 @@ a base simulation with real contention. The reverse is not acceptable.
 | `LOCKED_DECISIONS.md` | The 12 decisions, with rationale and corrections |
 | `ROADMAP.md` | Stages, gates, questions passed forward |
 | `OPEN_QUESTIONS.md` | 21 questions, each with status and the stage that decides it |
-| `REVIEW_REPLIES.md` | Both external reviews in full |
+| `REVIEW_REPLIES.md` | All four external reviews in full |
 | `_archive/` | The superseded originals and the first audit, preserved for audit |
 | `_reference/` | `PROJECT_SUMMARY.md`, `WORKING_AGREEMENT.md` |
 
 ---
 
-## Part 10 — Both external reviews
+## Part 10 — All four external reviews
 
 ### 10.1 Review 1
 
@@ -362,11 +363,43 @@ ordering, tick-order justifications, invariants, and circular-dependency traps.
 This project treats it as **open** — a game whose threat is external cannot
 justify its own simulation if the simulation is not already worth watching.
 
-### 10.3 What the reviews did not change
+### 10.3 Review 3 — three contradictions, all self-inflicted
+
+Every catch verified against the documents before acting. All real.
+
+| Contradiction | Resolution |
+|---|---|
+| "Tier" meant dependency direction *and* execution order at once, so the document stated two opposite rules three lines apart | Split into **ownership**, **phase** and **service**. Phase numbers were also wrong — they did not match the order they described. |
+| Chain A demanded end-to-end demonstration by Stage 5, but it needed items (Stage 7) and production (Stage 8) | Split into **A1** (Stage 5, resource contention) and **A2** (Stage 8, equipment) |
+| Item condition both degraded with use and changed only through repair | Items owns wear; applied during use. **Invariant 16** |
+| Four ownership ambiguities | Field-level ownership table plus the **request** pattern |
+| Equipment might never ship | **D21** — equipment is guaranteed; only its scope is negotiable |
+| Stage 1 and 2 left every implementation detail to be invented during coding — how the same decision gets made two incompatible ways | The **Stage 1 contract** and the **Stage 2 reference scenario** |
+
+### 10.4 Review 4 — three contradictions, all self-inflicted
+
+| Contradiction | Resolution |
+|---|---|
+| "Check for new decisions" was phase 5 but scheduled after phase 9 | Decisions given their own **phase 10**, at the end. All steps are now phase-monotonic |
+| The blueprint still described the pre-review ownership model | D1/D2/D4 rewritten: Storage owns holdings, Resources owns no mutable field, Facilities alone writes facility state |
+| The item-wear *test* still contradicted the rule | Invariant 16 now names the permitted operations |
+
+**The pattern it exposed, which now governs how corrections are made:** fixing one
+document without checking the others that describe the same rule does not remove a
+contradiction — it *relocates* it. The third pass corrected one file and left the
+blueprint describing the old model, which is worse than the original error because
+now two authoritative-looking sources disagree.
+
+**Also added:** the Stage 7 build list that made D21's guarantee funded rather than
+asserted; **Chain F** as its gate; decision timing settled (a decision raised in tick
+*N* is answered in tick *N+1*, or replay stops being deterministic); the interrupt
+budget made **shared** rather than per-system; **D22** recording why the base is 6–8.
+
+### 10.5 What the reviews did not change
 
 The architecture, the stack, the pure-simulation rule, seeded determinism, gate
-discipline, and the sequencing discipline. **Nothing in either review touched
-them** — which is the outcome a correct architecture produces under review.
+discipline, and the sequencing discipline. **No review touched them** — which is the
+outcome a correct architecture produces under review.
 
 ---
 
@@ -394,7 +427,8 @@ them** — which is the outcome a correct architecture produces under review.
   `node_modules` is slow and file watching breaks.
 - Docs are mirrored to shared storage for phone reading. **The mirror is a
   copy — never edit it.**
-- Git is local only. **There is no off-device backup.**
+- Git is backed up to a **private** remote at `github.com/MarkKramm/Milsim`, with a
+  docs-consistency workflow on every push.
 - The developer is a **beginner/intermediate developer**. Explain unfamiliar
   tooling rather than assuming it.
 

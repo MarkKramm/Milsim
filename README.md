@@ -66,7 +66,7 @@ Full map in `AGENTS.md`. The essentials:
 | `OPEN_QUESTIONS.md` | Every open question, its status, and the stage that answers it |
 | `ROADMAP.md` | Build order and gates |
 | `ARCHITECTURE.md` | Technical foundation |
-| `REVIEW_REPLIES.md` | Both external reviews: what was accepted, declined, and why |
+| `REVIEW_REPLIES.md` | All four external reviews: what was accepted, declined, and why |
 
 `_reference/` holds current but non-essential context. `_archive/` holds the
 superseded originals — **do not send those to another assistant**, since their

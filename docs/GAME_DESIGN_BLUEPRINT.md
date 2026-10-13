@@ -64,7 +64,7 @@ happened before what" is always answerable.
 of day is derived for display as abstract periods (Night, Morning, Afternoon,
 Evening) — **never a ticking clock**.
 
-**4. Dependencies.** Reads nothing. Writes only `tick`. Tier 0.
+**4. Dependencies.** Reads nothing. Writes only `tick`. Phase 0.
 
 **5. Autonomy.** The entire system runs itself. The player controls *rate*, not
 time.
@@ -98,7 +98,7 @@ advances `rngCursor`. `Math.random()` inside the simulation is a bug. The UI
 never draws from this stream — rendering must not shift the sequence, or replay
 breaks.
 
-**4. Dependencies.** Reads and writes only its own fields. Tier 0.
+**4. Dependencies.** Reads and writes only its own fields. Phase 0.
 
 **5. Autonomy.** Total.
 
@@ -147,7 +147,7 @@ read-only infrastructure.
 **10. Tests.** Every event's cause IDs exist and reference earlier ticks. Same
 seed → identical log. Events are never mutated after append.
 
-**11. Stage.** 1 (log), 3 (tiers), 4 (reports).
+**11. Stage.** 1 (log), 3 (tiers), 4 (reports). *Tier* here means significance, not execution order — see `SYSTEM_DEPENDENCIES.md` §1.
 
 ---
 
@@ -1152,18 +1152,20 @@ The complete assignment of every system to a stage, so none is left floating.
 
 ---
 
-# Appendix — The five chains that define the game
+# Appendix — The seven chains that define the game
 
 Everything above exists to make these possible. If a system cannot be placed in
 at least one of them, it is not yet justified.
 
-| Chain | Defined in |
-|---|---|
-| **A** — maintenance conflict: item degrades → worker contended → repair delayed → supply drops → meal missed | `SYSTEM_DEPENDENCIES.md` §5 |
-| **B** — the specialist problem: one absence reshapes the day | §5 |
-| **C** — the reserve decision: spending now versus saving for later | §5 |
-| **D** — the departure: neglect compounds until someone leaves | §5 |
-| **E** — relationship consequence: who works together changes how fast | §5 |
+| Chain | Gate | Defined in |
+|---|---|---|
+| **A1** — resource contention: work order due → worker already committed → repair deferred → meal late → hunger rises | Stage 5 | `SYSTEM_DEPENDENCIES.md` §7 |
+| **A2** — the equipment chain: A1 plus item degrades → repair queue → repair beats meals → meal missed | Stage 8 | §7 |
+| **B** — the specialist problem: one absence reshapes the day | Stage 5+ | §7 |
+| **C** — the reserve decision: spending now versus saving for later | Stage 5+ | §7 |
+| **D** — the departure: neglect compounds until someone leaves | Stage 3+ | §7 |
+| **E** — relationship consequence: who works together changes how fast | Stage 4 | §7 |
+| **F** — the inspection scenario: weapon issued → used → condition drops → repaired, and the player sees that same item change | Stage 7 | §7 |
 
 **Chain A is the reference chain — and it is now two chains.** The full version
 needs individual items (Stage 7) and production (Stage 8), so requiring it by

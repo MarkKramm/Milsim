@@ -15,10 +15,10 @@ they become answerable.
 **21 questions, numbered Q16–Q37.** Q36–Q37 were added by the completeness audit
 (`AUDIT_FINDINGS.md`), which found gaps that no prior review had looked for.
 
-**21 questions, numbered Q16–Q37.** The numbering skips Q20: it was a question
-about log retention that the event-log design (§A3) had already answered by the
-time the list was written. It is recorded here rather than renumbered so the
-numbering stays stable against the earlier drafts and reviews that cite it.
+The numbering skips Q20: it was a question about log retention that the event-log
+design (§A3) had already answered by the time the list was written. It is
+recorded here rather than renumbered so the numbering stays stable against the
+earlier drafts and reviews that cite it.
 
 ---
 

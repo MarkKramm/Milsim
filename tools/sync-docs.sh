@@ -43,8 +43,17 @@ const fs = require("fs");
 const f = "docs/REVIEW_BRIEF.md";
 const [rev, when, n] = process.argv.slice(1);
 let s = fs.readFileSync(f, "utf8");
-s = s.replace(/<!-- v__V__ \| __N__ lines \| updated __WHEN__ -->/,
+// Match BOTH the placeholder and an already-written stamp. Matching only the
+// placeholder made this run once and then silently stop updating, so the
+// staleness detector read "v<old commit>" forever - which is the one failure
+// it exists to reveal.
+const before = s;
+s = s.replace(/^<!-- v.*?\| \d+ lines \| updated .*?-->$/m,
   `<!-- v${rev} | ${n} lines | updated ${when} -->`);
+if (s === before) {
+  console.error("WARNING: no SYNCSTAMP line found in docs/REVIEW_BRIEF.md - it was not updated");
+  process.exit(1);
+}
 fs.writeFileSync(f, s);
 ' "$STAMP_REV" "$STAMP_WHEN" "$tmp_lines"
 

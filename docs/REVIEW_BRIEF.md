@@ -1,5 +1,5 @@
 <!-- SYNCSTAMP -->
-<!-- v8b8a2d6 | 368 lines | updated 2026-10-13 08:59 -->
+<!-- vb4f89fc | 455 lines | updated 2026-10-13 11:44 -->
 
 # Military Base Simulator — Project Checkpoint
 

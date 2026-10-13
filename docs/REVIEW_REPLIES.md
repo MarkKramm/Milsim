@@ -195,11 +195,29 @@ treated combat as a likely eventual stage; this project treats it as a system
 that may never exist, because a game whose threat is external cannot justify its
 own simulation if the simulation is not already worth watching.
 
+### An error found in my own report
+
+A verification pass counted the artefacts rather than trusting the summary I had
+written, and found the summary overstated nothing but undercounted twice:
+
+- **"20 systems" was wrong: there are 24** — Group A (4), B (5), C (3), D (6),
+  E (1), F (3), G (2). Undercounting was harmless, but a design document that
+  miscounts its own contents is exactly the kind of thing this project cannot
+  afford, so it is recorded here rather than quietly corrected.
+- **"20 open questions" was wrong: there are 19** (Q16–Q35, skipping Q20).
+
+What the verification confirmed as genuinely complete: all **24 systems carry
+all 11 template sections** (no system was left half-specified), **15 invariants**,
+**5 cross-system chains**, **10 stages each with a gate**, and a system → stage
+map assigning every system, including which are conditional.
+
+The lesson recorded: count the artefacts, do not summarise from memory.
+
 ### Deliverables produced
 
 | File | What it contains |
 |---|---|
-| `GAME_DESIGN_BLUEPRINT.md` | The System Atlas — 20 systems, each with 11 sections, plus status labels and the system → stage map |
+| `GAME_DESIGN_BLUEPRINT.md` | The System Atlas — **24 systems**, each with all 11 template sections, plus status labels and the system → stage map |
 | `SYSTEM_DEPENDENCIES.md` | Ownership, tiers, tick order, 5 cross-system chains, 15 invariants, dependency traps, debugging order |
 | `OPEN_QUESTIONS.md` | Rewritten — every question grouped by the stage that answers it, with status and deciding evidence |
 | `ROADMAP.md` | 10 stages, conditional ones marked, per-stage gates, questions passed forward |

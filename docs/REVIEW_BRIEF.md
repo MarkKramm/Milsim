@@ -121,7 +121,7 @@ see Part 9.
 | **Code** | None. Empty directories and a `.gitignore` |
 | **Git** | Local commits only. Nothing pushed |
 | **External reviews** | Two, both acted upon |
-| **Open questions** | 20, each with a named stage that answers it |
+| **Open questions** | **19** (Q16–Q35), each with a named stage that answers it |
 | **Next action** | Stage 1 — a simulation that ticks |
 | **Blocked on** | Nothing |
 
@@ -210,9 +210,9 @@ feels like fun. Item 4 is the honest test.
 
 ## Part 7 — Long-term design
 
-Fully specified in `GAME_DESIGN_BLUEPRINT.md`: 20 systems, each with purpose,
-state, rules, dependencies, autonomy, player agency, consequences, events,
-interface, tests, and stage.
+Fully specified in `GAME_DESIGN_BLUEPRINT.md`: **24 systems**, each with eleven
+sections — purpose, state, rules, dependencies, autonomy, player agency,
+consequences, events, interface, tests, and stage. Every one has all eleven.
 
 **Needs ladder.** Hunger and fatigue first; then hydration, morale, injuries —
 one at a time. Morale is derived and must contribute something the underlying
@@ -259,11 +259,11 @@ Stage 5, the game is not the game this project describes.
 | Document | Contents |
 |---|---|
 | `GAME_DESIGN_BLUEPRINT.md` | **The System Atlas** — every system, 11 sections each |
-| `SYSTEM_DEPENDENCIES.md` | Ownership, tiers, tick order, chains, 15 invariants |
+| `SYSTEM_DEPENDENCIES.md` | Ownership, tiers, tick order, 5 chains, 15 invariants |
 | `ARCHITECTURE.md` | Technical foundation |
 | `LOCKED_DECISIONS.md` | The 12 decisions, with rationale and corrections |
 | `ROADMAP.md` | Stages, gates, questions passed forward |
-| `OPEN_QUESTIONS.md` | 20 questions, each with status and deciding stage |
+| `OPEN_QUESTIONS.md` | 19 questions, each with status and the stage that decides it |
 | `REVIEW_REPLIES.md` | Both external reviews in full |
 | `AUDIT_AND_RECOMMENDATIONS.md` | The first audit |
 | `ORIGINAL_PLANNING_PACK.md` | The superseded originals, preserved for audit |

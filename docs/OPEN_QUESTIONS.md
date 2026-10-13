@@ -12,6 +12,11 @@ Every decision that is not fully settled, with its status, its alternatives, and
 **No question here blocks Stage 1.** Questions are grouped by the stage at which
 they become answerable.
 
+**19 questions, numbered Q16–Q35.** The numbering skips Q20: it was a question
+about log retention that the event-log design (§A3) had already answered by the
+time the list was written. It is recorded here rather than renumbered so the
+numbering stays stable against the earlier drafts and reviews that cite it.
+
 ---
 
 ## Answerable now — Stage 1

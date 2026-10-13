@@ -308,6 +308,90 @@ Confirmed with your clarification. Two distinct channels:
 Budget: **no more than ~1 true interrupt per in-game day.** If you are getting
 more, the design is wrong.
 
+**The budget is shared, not per-system.** *Corrected after the audit and the
+fourth external review.* Three systems independently generate situations that
+want attention — named-option decisions (D2), anomalies (D3) and commitments
+(C3). Each throttling itself is not enough: three systems at a third of the
+budget each produce a full budget, and a fourth source would push past it.
+
+So the rule is a **single shared queue with a global ceiling**, and a system that
+raises something while the queue is full does not silently discard it — it
+defers, and the report says it happened later. A situation the player never sees
+is indistinguishable from one that never occurred.
+
+| Channel | Budget |
+|---|---|
+| True interrupts | ~1 per in-game day, **across all systems** |
+| Queued decisions | ~3–5 per day, **across all systems** |
+| Anomalies | non-blocking; reported in the daily summary, not surfaced individually |
+
+If any single system ever exceeds a third of the shared budget on its own, that
+system is the problem — the ceiling is not to be raised to accommodate it.
+
+---
+
+## D20 — Requested: a larger foundation, upfront
+
+You asked me to design the factory/engine layer and a stronger architecture now
+rather than shipping a throwaway Stage 1.
+
+**Partially agreed, and here's the honest split:**
+
+- **Documentation now:** yes, fully. `_archive/LONG_TERM_DESIGN.md` and
+  `ARCHITECTURE.md` describe the whole game, including factories, engines,
+  vehicles and progression, so any future agent can continue this work without
+  re-deriving it.
+- **Implementation now:** no. Not because the plan is wrong, but because a
+  factory simulation built before anyone has watched a person get hungry and
+  understand why will be the wrong factory simulation. The rules you'd write
+  would change once you learn what the base actually feels like.
+
+This is not gatekeeping and it is not me being cautious for its own sake. The
+concrete reason: **in a sim, you cannot design the interesting systems until
+the boring ones are proven interesting.** I do not know yet whether people
+enjoy watching six people eat and sleep. If they do not, the factory layer is
+moot — and if they do, you will want the factory to serve that experience, which
+I cannot currently predict.
+
+The roadmap gives every planned system a real design and a real place. Nothing is
+missing. The order just protects the order.
+
+---
+
+## D21 — Equipment and loadouts are guaranteed, not conditional
+
+*Added after the third external review.*
+
+Equipment condition was originally one of four candidates at Stage 6's evidence
+review. That looked like scope discipline. It was also a slow extinction.
+
+Before this decision, every stage after 6 was conditional. Had Stage 6 picked
+logistics instead, Stage 7 would have become "whatever else the evidence
+supports" — and the equipment work, the
+reason this project is a *military* base sim rather than a generic colony sim,
+would have no stage at all. A gate that can indefinitely postpone the defining
+feature is not a gate.
+
+**Decision: a minimum equipment and loadout experience is a guaranteed milestone.**
+Stage 7 happens. Its *scope* remains negotiable — how many item types, how deep
+the repair model, whether armour values matter — but the stage does not.
+
+This does not commit to building it now, and it does not weaken Stage 6. Stage 6
+still chooses one additional expansion; it simply no longer chooses whether
+equipment exists.
+
+**The structural contract** — soldier, item, slot, loadout, and how vehicles
+relate to all of it — is fixed in `GAME_DESIGN_BLUEPRINT.md`, "The equipment
+structural contract". The developer's interest is *inspection*: soldiers,
+helmets, clothing, pockets, durability, armour, weapons, loadouts. A flat item
+list with a condition bar would satisfy the old wording of Stage 7 while missing
+all of it, so the guarantee is tied to that contract rather than to the word
+"equipment".
+
+**The rule this follows:** scope is negotiable, identity is not. If the evidence
+says equipment matters less than expected, build less of it — but the base must
+end up a world of specific, inspectable things rather than totals.
+
 ---
 
 ## D17 — What loses you: nothing happening, and losing everyone
@@ -352,66 +436,33 @@ slow project honest.
 
 ---
 
-## D20 — Requested: a larger foundation, upfront
+## D22 — Base size, and why it is not "just a number"
 
-You asked me to design the factory/engine layer and a stronger architecture now
-rather than shipping a throwaway Stage 1.
+Stage 2 specifies 6–8 personnel. For three revisions that number sat in the
+roadmap with no reasoning attached to it anywhere, which made it impossible to
+tell whether it was a considered choice or an arbitrary one. Recording why:
 
-**Partially agreed, and here's the honest split:**
+**It is a reading-load decision, not a simulation one.** The target is a phone.
+Eight people is roughly what fits on one screen with a reason attached to each —
+which is what makes "notice something before the report tells you" possible at
+all. A roster of twenty would train the player to skim.
 
-- **Documentation now:** yes, fully. `_archive/LONG_TERM_DESIGN.md` and
-  `ARCHITECTURE.md` describe the whole game, including factories, engines,
-  vehicles and progression, so any future agent can continue this work without
-  re-deriving it.
-- **Implementation now:** no. Not because the plan is wrong, but because a
-  factory simulation built before anyone has watched a person get hungry and
-  understand why will be the wrong factory simulation. The rules you'd write
-  would change once you learn what the base actually feels like.
+**But it is close to the floor of what the chains need**, and that is a genuine
+risk rather than a comfortable margin:
 
-This is not gatekeeping and it is not me being cautious for its own sake. The
-concrete reason: **in a sim, you cannot design the interesting systems until
-the boring ones are proven interesting.** I do not know yet whether people
-enjoy watching six people eat and sleep. If they do not, the factory layer is
-moot — and if they do, you will want the factory to serve that experience, which
-I cannot currently predict.
+- **Chain B** (the specialist problem) needs specialists to be scarce. With
+  seven people there may be exactly one, which makes the chain fragile rather
+  than dramatic.
+- **Chain D** (the departure) needs a departure to *hurt*. Losing one of seven is
+  a sixth of the labour force; losing one of twenty would be felt less.
 
-The roadmap gives every planned system a real design and a real place. Nothing is
-missing. The order just protects the order.
+So 6–8 is right for Stage 2's question (*is watching them work interesting?*)
+and possibly wrong for Stage 5's (*is the base a place with its own problems?*).
 
----
-
-## D21 — Equipment and loadouts are guaranteed, not conditional
-
-*Added after the third external review.*
-
-Equipment condition was originally one of four candidates at Stage 6's evidence
-review. That looked like scope discipline. It was also a slow extinction.
-
-Every stage after 6 is conditional. If Stage 6 picked logistics instead, Stage 7
-would become "whatever else the evidence supports" — and the equipment work, the
-reason this project is a *military* base sim rather than a generic colony sim,
-would have no stage at all. A gate that can indefinitely postpone the defining
-feature is not a gate.
-
-**Decision: a minimum equipment and loadout experience is a guaranteed milestone.**
-Stage 7 happens. Its *scope* remains negotiable — how many item types, how deep
-the repair model, whether armour values matter — but the stage does not.
-
-This does not commit to building it now, and it does not weaken Stage 6. Stage 6
-still chooses one additional expansion; it simply no longer chooses whether
-equipment exists.
-
-**The structural contract** — soldier, item, slot, loadout, and how vehicles
-relate to all of it — is fixed in `GAME_DESIGN_BLUEPRINT.md`, "The equipment
-structural contract". The developer's interest is *inspection*: soldiers,
-helmets, clothing, pockets, durability, armour, weapons, loadouts. A flat item
-list with a condition bar would satisfy the old wording of Stage 7 while missing
-all of it, so the guarantee is tied to that contract rather than to the word
-"equipment".
-
-**The rule this follows:** scope is negotiable, identity is not. If the evidence
-says equipment matters less than expected, build less of it — but the base must
-end up a world of specific, inspectable things rather than totals.
+**Decision: 6–8 for Stage 2, and growth is a Stage 5+ question, not an
+accident.** If Chain B or D cannot produce drama at this size, the base grows —
+that is the intended trigger, not a failure of the design. Recorded as an open
+question so it is answered deliberately rather than drifting.
 
 ---
 

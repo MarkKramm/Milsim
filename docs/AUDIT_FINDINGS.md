@@ -199,8 +199,9 @@ The honest position:
 
 Two actions, and then Stage 1:
 
-1. **Fund the D21 promise.** Give Stage 7 a real build list before calling it
-   guaranteed, or mark the guarantee as deliberately unfunded until Stage 6.
-   Leaving it as-is means the roadmap's strongest commitment is its emptiest.
+1. ~~**Fund the D21 promise.**~~ **Done after the fourth external review.**
+   Stage 7 now has a build list, its own minimal repair queue, and Chain F as its
+   gate. The prerequisite problem it exposed is also closed: Stage 7 no longer
+   depends on the conditional Stage 8.
 2. **Carry findings 3, 4 and 5 into `OPEN_QUESTIONS.md`** as Stage 5+ questions
    so they are answered at the point where evidence exists, not forgotten.

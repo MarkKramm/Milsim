@@ -324,6 +324,93 @@ reviews is the strongest available evidence that the architecture is sound.
 
 ---
 
+## Review 4 — ChatGPT
+
+**Trigger:** given `PROJECT_MASTER.md` — the single-file bundle — rather than a
+document selection. It correctly noticed it was reading the current design,
+including `AUDIT_FINDINGS.md`, and reported that previously identified problems
+were already fixed.
+
+**Overall verdict:** *"we are close to having a solid Stage 1 foundation, but the
+guaranteed equipment stage and a few remaining architectural contradictions
+deserve attention."*
+
+### What it confirmed
+
+Everything in the third review: the ownership/phases/services split, the A1/A2
+chain split, D21, and the Stage 1 contract. It explicitly recommended preserving
+them rather than reopening them.
+
+### What it found — and what was true
+
+**Three contradictions, all verified as real, and all introduced by this
+assistant while applying the third review's fixes.** Each was checked against the
+documents before acting.
+
+| Finding | Resolution |
+|---|---|
+| **The tick order contradicted itself.** Derived summaries ran at phase 9, but the final step assigned "check for new decisions" to phase 5 — a phase-5 operation scheduled after phase 9. | Decisions given their own phase (10) at the end. Every tick step is now phase-monotonic, verified mechanically. |
+| **The blueprint still described the old ownership model.** D1 claimed Resources "owns quantities... written by consumption, production and delivery"; D2 claimed "Written by Production and Items"; D4 claimed "Written by Delivery" — all contradicting the ownership table written in a *different document* during the previous pass. | D1, D2 and D4 now state the authoritative rule: Storage owns holdings, Resources owns no mutable field, Facilities alone writes facility state. Every system outside an owner sends a **request**. |
+| **The item-wear test still contradicted the wear rule.** §3 had been corrected to say condition degrades with use, but §10 still read "changes only through a repair or production" — which would have prevented wear from ever happening. | §10 now reads: condition changes only when Items applies a permitted operation (wear, repair, manufacture). Invariant 16. |
+
+**The pattern is the real finding.** Fixing a document without checking the other
+documents that describe the same rule does not remove a contradiction — it
+*relocates* it. The third pass corrected `SYSTEM_DEPENDENCIES.md` and left the
+blueprint describing the old model, which is strictly worse than the original
+single-document error, because now two authoritative-looking sources disagree.
+
+**This is why every correction in this pass edits every document that describes
+the affected rule**, not only the one where the contradiction was noticed.
+
+### Three further inconsistencies it caused me to find
+
+Its Stage 7 critique sent me looking for the same class of error elsewhere, and
+three more appeared:
+
+- **D3's prerequisite still permitted Stage 7 to depend on Production (Stage 8)** —
+  a *conditional* stage. A guaranteed stage cannot require an optional one. Now
+  Stage 7 ships its own minimal repair queue.
+- **D21's rationale described the old rule in the present tense** ("every stage
+  after 6 is conditional"), contradicting its own outcome three paragraphs later.
+  Rewritten as past tense.
+- **`AUDIT_FINDINGS.md` still listed Stage 7's missing build list as an open
+  action**, contradicting the roadmap once that action was taken. Marked resolved.
+
+### What it added that was genuinely new
+
+**A build list for Stage 7**, including the dependency closure it exposed: the
+stage needed a repair queue, and Stage 8 was conditional, so Stage 7 had to
+supply its own. That is precisely the class of bug that a promise without a build
+list produces.
+
+**Chain F — the inspection scenario**, now the Stage 7 gate: issue a weapon, use
+it, damage it, inspect the history, repair it, and see *that item* change. Chains
+A1, A2 and F together now cover the three stages that matter most.
+
+**A design question it asked that I answered:** can a newly generated decision be
+answered immediately? **No — a decision raised in tick N is answered in tick N+1.**
+This is not a limitation to route around. If a decision could be answered the
+moment it appeared, the same state and seed could resolve differently depending
+on when the player clicked, and replay would stop being deterministic. The
+one-tick delay is what makes a run reproducible.
+
+### What it did not get
+
+It asked for the emergence, terminal-state and cross-system questions to be
+carried into `OPEN_QUESTIONS.md`. They already were — Q36, Q37 and the audit's
+chain-coverage finding, added in the previous pass. It was working from the audit
+without knowing it had already been acted on.
+
+It also suggested pushing to GitHub as an open risk. Already done.
+
+### What did not change
+
+Settled decisions and the game vision. No new systems, no scope expansion, no
+unrelated questions reopened. Stage 7's *scope* remains negotiable per D21; only
+its certainty changed.
+
+---
+
 ## Reviews
 
-*(three received — see above)*
+*(four received — see above)*

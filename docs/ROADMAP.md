@@ -360,6 +360,45 @@ Individual items with condition, wear, and reliability. Maintenance needs,
 parts, storage limits, imperfect deliveries, and repairs that change the actual
 condition of a specific item.
 
+**Build list** *(added after the audit, and after the fourth external review,
+both of which found that D21 made this stage a promise while the roadmap carried
+no way to keep it. A guaranteed stage with no build list is a hope.)*
+
+- **Identity.** Every soldier and every item has a stable ID that outlives its
+  condition. A badly damaged rifle is still *that* rifle.
+- **Items.** `id`, `type`, `location`, `condition`, `assignment`, `repairHistory[]`.
+  A visible scar, not a bare number.
+- **Slots.** At minimum: primary weapon, sidearm, helmet, body armour, boots.
+  Empty, occupied, broken, incompatible and unavailable must be
+  *distinguishable* — a slot that cannot be empty communicates nothing.
+- **Compatibility.** An item cannot silently belong to two soldiers or occupy an
+  incompatible slot. Attempting it is refused, with a reason.
+- **Containers.** A minimal version: clothing or webbing that holds items. Not
+  every pocket — the mechanism, proved once.
+- **Condition and wear.** Use damages a *specific* item. Only the Items system
+  writes `condition`, via an explicit operation (invariant 16).
+- **A minimal repair queue, included here.** Stage 8 is conditional, so this
+  stage may not depend on it. Stage 7 ships its own small repair queue; Stage 8
+  later absorbs it. **This is the dependency that had to be closed** — a
+  guaranteed stage cannot require an optional one.
+- **Observable capability.** A missing, incompatible or broken item must change
+  something the soldier can actually *do*. A displayed statistic is not a
+  capability.
+- **Derived loadouts.** Never stored — resolved from assignment and slots.
+- **Removal is not symmetric with addition.** Taking an item away must be an
+  event, never a silent subtraction.
+
+**Chain F — the inspection scenario** *(new, and the gate for this stage)*
+
+```
+A weapon is issued to Bakary and he carries it (Items)
+  → his loadout shows the primary-weapon slot filled (Items)
+    → he is assigned work needing that weapon (Jobs)
+      → the weapon is used and its condition drops (Items applies wear)
+        → he can now be inspected, with a repair history entry (Items + UI)
+          → a repair changes that same item, and the player sees it (Items)
+```
+
 **Gate:** the base reads as a world of **specific, individual things**, not a set
 of resource totals. A repair changed *that* item, and the player can see it.
 

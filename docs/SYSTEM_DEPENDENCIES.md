@@ -160,6 +160,7 @@ This is a single, unambiguous rule. It replaces the earlier contradiction where
 | 7 | Vehicles, Operations | 9, 10 |
 | 8 | Relationships | 4 |
 | 9 | Derived summaries — readiness, morale | 3, 6 |
+| 10 | Decisions — check for new situations | 4 |
 
 | # | Step | Phase | Why here |
 |---|---|---|---|
@@ -173,8 +174,8 @@ This is a single, unambiguous rule. It replaces the earlier contradiction where
 | 8 | Job selection | 5 | Reads needs, availability, intent, items — all current. |
 | 9 | Advance job progress | 5 | Work completes. |
 | 10 | Relationships | 8 | Reads who worked with whom this tick. |
-| 11 | Recompute derived summaries | 9 | Last, because they summarise everything above. |
-| 12 | Check for new decisions | 5 | New situations arise from this tick's results. |
+| 11 | Recompute derived summaries | 9 | Summarises everything above. |
+| 12 | Check for new decisions | 10 | Must follow every other phase, or a decision could be raised on a situation that has not finished resolving. |
 
 **Events are written throughout, not at a step.** There is no emit phase. A
 system emits as soon as it knows something notable, which is what allows causes
@@ -303,6 +304,23 @@ before and after.
 simulation with resource contention. What must not happen is the reverse: if only
 A1 was ever tested and equipment arrived later untested, the military identity of
 the game would be unproven.
+
+### Chain F — the inspection scenario *(the Stage 7 gate)*
+
+The chain that proves individual equipment is real rather than a list with a
+condition bar.
+
+```
+A weapon is issued to Bakary and he carries it (Items)
+  → his loadout shows the primary-weapon slot filled (Items)
+    → he is assigned work needing that weapon (Jobs)
+      → the weapon is used and its condition drops (Items applies wear)
+        → he can be inspected, with a repair-history entry (Items + UI)
+          → a repair changes that same item, and the player sees it (Items)
+```
+
+**Rule:** if a condition value never changes as a *consequence of use*, Items is
+showing a decoration rather than a system.
 
 ### Chain B — the specialist problem
 

@@ -2,12 +2,12 @@
 
 **If you are an AI assistant or developer picking this project up cold: this file
 tells you where things stand and what to do next. Read it first, then
-`docs/PROJECT_SUMMARY.md`, then `docs/ROADMAP.md`.**
+`docs/REVIEW_BRIEF.md`, then `docs/ROADMAP.md`.**
 
 **Model-agnostic. Assumes no prior conversation, no particular tooling, and no
 knowledge of who worked on this before.**
 
-Also read `docs/WORKING_AGREEMENT.md` — it explains where documents live, how
+Also read `docs/_reference/WORKING_AGREEMENT.md` — it explains where documents live, how
 they are synced, and when each must be updated.
 
 ---
@@ -152,7 +152,7 @@ much you want to build the factory layer.
 
 **Scope is sequenced, not banned.** Combat, vehicles, faction warfare, hiring,
 pathfinding, and animation are all fully designed in
-`docs/LONG_TERM_DESIGN.md` and all parked with defined unlock points. If you
+`docs/GAME_DESIGN_BLUEPRINT.md` and all parked with defined unlock points. If you
 suggest adding one, check its unlock condition in `docs/ROADMAP.md` first.
 
 **Write down disagreements.** The original plan was audited and found to be a
@@ -184,26 +184,37 @@ of a change plainly; do not silently alter scope.
 | File | Contents |
 |---|---|
 | `AGENTS.md` | This file — continuation brief |
-| `docs/PROJECT_SUMMARY.md` | One-page orientation |
+| `README.md` | Project overview and layout |
+
+### Current — the design
+
+| File | Contents |
+|---|---|
+| `docs/REVIEW_BRIEF.md` | **The one file to send another assistant** — self-contained: history, decisions, architecture, roadmap, risks, and both reviews |
+| `docs/GAME_DESIGN_BLUEPRINT.md` | **The system atlas** — 24 systems, all 11 sections each |
+| `docs/SYSTEM_DEPENDENCIES.md` | Who owns what, tick order, 5 cross-system chains, 15 invariants |
 | `docs/LOCKED_DECISIONS.md` | The full decision set with rationale, including corrections from external review |
-| `docs/OPEN_QUESTIONS.md` | Genuinely unresolved questions — Q16–Q25 raised by the external review |
-| `docs/ORIGINAL_PLANNING_PACK.md` | The original, superseded planning documents, preserved for audit |
-| `docs/GAME_DESIGN_BLUEPRINT.md` | **The system atlas** - every system specified, 11 sections each |
-| `docs/SYSTEM_DEPENDENCIES.md` | Who owns what, tick order, cross-system chains, invariants |
+| `docs/OPEN_QUESTIONS.md` | 19 open questions (Q16–Q35), each with the stage that answers it |
 | `docs/ROADMAP.md` | Build order and evidence-based gates |
-| `docs/ARCHITECTURE.md` | Technical foundation, tick order, state shape |
-| `docs/LONG_TERM_DESIGN.md` | The full game, designed |
-| `docs/REVIEW_BRIEF.md` | **The one file to send another assistant** — self-contained: history, decisions, architecture, roadmap, risks, 10 open questions, and the full record of the review already completed |
+| `docs/ARCHITECTURE.md` | Technical foundation, tick order, state shape, testing |
 | `docs/REVIEW_REPLIES.md` | Both external reviews, what was accepted, what was declined, and why |
-| `docs/WORKING_AGREEMENT.md` | Where docs live, how to sync them, when to update what |
-| `docs/GAME_VISION.md` | Vision and design pillars |
-| `docs/CORE_LOOP.md` | The repeating gameplay loop |
-| `docs/PROTOTYPE_SPEC.md` | First prototype scope, acceptance criteria |
-| `docs/AUDIT_AND_RECOMMENDATIONS.md` | Critical review of the original plan |
-| `docs/DECISIONS_TO_APPROVE.md` | Decision questions with recommendations |
-| `docs/DECISIONS_ANSWERED.md` | The developer's actual answers |
-| `docs/ORIGINAL_PLANNING_PACK.md` | The original superseded planning documents, preserved for audit |
-| `docs/FOUNDATION_DECISIONS.md`, `docs/IMPLEMENTATION_STAGES.md`, `docs/MASTER_PROMPT.md` | Original planning files; background, superseded |
+| `docs/_reference/PROJECT_SUMMARY.md` | One-page orientation |
+| `docs/_reference/WORKING_AGREEMENT.md` | Where docs live, how to sync them, when to update what |
+
+### Archive — superseded, kept for audit
+
+**Do not send these to another assistant.** They predate both reviews and contain
+older answers to questions since resolved differently; including them makes a
+current design look self-contradictory.
+
+| File | Superseded by |
+|---|---|
+| `docs/_archive/LONG_TERM_DESIGN.md` | `docs/GAME_DESIGN_BLUEPRINT.md` |
+| `docs/_archive/AUDIT_AND_RECOMMENDATIONS.md` | corrections applied in `docs/LOCKED_DECISIONS.md` |
+| `docs/_archive/DECISIONS_TO_APPROVE.md`, `docs/_archive/DECISIONS_ANSWERED.md` | `docs/LOCKED_DECISIONS.md` |
+| `docs/_archive/GAME_VISION.md`, `CORE_LOOP.md`, `PROTOTYPE_SPEC.md` | `docs/REVIEW_BRIEF.md` |
+| `docs/_archive/FOUNDATION_DECISIONS.md`, `IMPLEMENTATION_STAGES.md`, `MASTER_PROMPT.md` | `docs/LOCKED_DECISIONS.md`, `docs/ROADMAP.md` |
+| `docs/_archive/ORIGINAL_PLANNING_PACK.md` | everything above |
 
 ---
 

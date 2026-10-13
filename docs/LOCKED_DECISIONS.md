@@ -80,7 +80,7 @@ time without touching the world.
 Every threshold is a tunable constant on the underlying condition, not on the
 summary.
 
-Injuries remain a later layer (`LONG_TERM_DESIGN.md` §3).
+Injuries remain a later layer (`_archive/LONG_TERM_DESIGN.md` §3).
 
 ---
 
@@ -185,7 +185,7 @@ People pressure (leave requests, quit threats, clashes) enters once the soft
 failure spine exists.
 
 **External pressure (raids, enemy AI, war layer) remains out of scope** — it is
-parked in `LONG_TERM_DESIGN.md`, not deleted. My reasoning for deferring it
+parked in `_archive/LONG_TERM_DESIGN.md`, not deleted. My reasoning for deferring it
 stands: it is the most expensive way to create pressure and the most likely to
 kill the project before the core is fun.
 
@@ -249,7 +249,7 @@ the right call anyway.
 **Locked for the prototype: hunger and fatigue only.**
 
 Planned later, in order: **hydration → morale → injuries**. Your preference for
-all three is recorded and scheduled — see `LONG_TERM_DESIGN.md` §2.
+all three is recorded and scheduled — see `_archive/LONG_TERM_DESIGN.md` §2.
 
 The order is deliberate. Each need multiplies the number of interactions to
 tune. Adding three at once means you cannot tell which one caused a problem.
@@ -319,7 +319,7 @@ modes of an unpressured sim.
 - **Losing everyone** → soft failure spine (D1) gives it teeth.
 - **"A loss can still be okay"** → agreed and supported by a **continuation
   system**: permanent history, achievements, secrets, rare events. See
-  `LONG_TERM_DESIGN.md` §6. A base that collapses should still leave something
+  `_archive/LONG_TERM_DESIGN.md` §6. A base that collapses should still leave something
   behind you want to keep.
 
 ---
@@ -359,7 +359,7 @@ rather than shipping a throwaway Stage 1.
 
 **Partially agreed, and here's the honest split:**
 
-- **Documentation now:** yes, fully. `LONG_TERM_DESIGN.md` and
+- **Documentation now:** yes, fully. `_archive/LONG_TERM_DESIGN.md` and
   `ARCHITECTURE.md` describe the whole game, including factories, engines,
   vehicles and progression, so any future agent can continue this work without
   re-deriving it.

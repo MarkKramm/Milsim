@@ -24,8 +24,10 @@ If a decision was made in conversation but not written down, it was not made.
 
 | Location | Role |
 |---|---|
-| `~/military-base-sim-dev/docs/` | **Source of truth.** All documentation. Edit here. |
+| `~/military-base-sim-dev/docs/` | **Source of truth.** Current documentation. Edit here. |
 | `~/military-base-sim-dev/` | Code. Fast, git-friendly, file watching works. |
+| `docs/_reference/` | Current, but not needed for external review |
+| `docs/_archive/` | Superseded originals. Kept for audit. **Never send to another assistant** |
 | `/storage/emulated/0/Download/military-base-sim/` | **Read-only mirror** for phone reading. Never edit directly. |
 | Git | Local history. One machine, so it is a backup, not a collaboration tool. |
 
@@ -39,9 +41,20 @@ The mirror is a copy. If you edit there, your change is lost the next time
 After editing anything in `docs/`:
 
 ```bash
-cp -f docs/*.md /storage/emulated/0/Download/military-base-sim/
-chmod 644 /storage/emulated/0/Download/military-base-sim/*.md
+tools/sync-docs.sh
 ```
+
+That copies the three-tier layout to the mirror, writes `INDEX.md` so the
+folder explains itself, and refreshes Android's media index. Add
+`--no-scan` to skip the index refresh.
+
+**Why the index refresh is needed.** Shared storage is a FUSE mount, so
+overwriting a file does not reliably invalidate Android's cached listing.
+The bytes are correct immediately; only the timestamp and thumbnail that a file
+picker displays go stale. The rescan is a read-only broadcast and cannot modify
+a file. If an app still shows old versions, close it fully first — otherwise it
+re-reads its own cache — or copy-paste from a text editor, which reads the real
+file.
 
 Then commit. Ask and it will be done for you.
 
@@ -54,17 +67,24 @@ Pick by what you need:
 | File | Send when |
 |---|---|
 | `AGENTS.md` | Continuing work with a coding assistant. |
-| `docs/REVIEW_BRIEF.md` | **Asking another model for opinions or ideas.** Fully self-contained — project context, all decisions, architecture, roadmap, risks, and 20 open questions in one file. Send this and nothing else. |
+| `docs/REVIEW_BRIEF.md` | **Asking another model for opinions or ideas.** Fully self-contained — project context, all decisions, architecture, roadmap, risks, both reviews, and 19 open questions in one file. Send this and nothing else. |
 | `docs/REVIEW_BRIEF.md` §3, §5, §9 | Only, if context is tight. Decisions, roadmap, and questions. |
-| `docs/PROJECT_SUMMARY.md` | A quick orientation rather than a full briefing. |
+| `docs/_reference/PROJECT_SUMMARY.md` | A quick orientation rather than a full briefing. |
+| `docs/GAME_DESIGN_BLUEPRINT.md` | When depth is wanted on specific systems. |
 
 Send the **file**, not a summary of it. A model reasoning from the actual
 document will give better answers than one reasoning from a description of it.
 
-**When asking another assistant for ideas:** also send `docs/LONG_TERM_DESIGN.md`
-and `docs/AUDIT_AND_RECOMMENDATIONS.md`, so they know what is already planned
-and what has already been criticised. Without that context they will happily
-propose things that were already considered and rejected.
+**When asking another assistant for ideas:** the brief already records what was
+proposed, accepted, declined, and why. Add `docs/REVIEW_REPLIES.md` if they need
+the reasoning behind those choices — it names the traps that were already
+identified, which is the context that stops them proposing things already
+considered and rejected.
+
+**Never send `docs/_archive/`.** Those files predate both external reviews and
+contain older answers to questions since resolved differently. Given a current
+document and a superseded one, a model will merge them and report that a
+consistent design is self-contradictory.
 
 ---
 

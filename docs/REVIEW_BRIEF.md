@@ -53,7 +53,7 @@ stage can actually build.
 
 A set of planning documents produced before this phase — vision, core loop,
 prototype spec, foundation decisions, stages, open questions. Explicitly
-planning-only. Preserved in full in `ORIGINAL_PLANNING_PACK.md`.
+planning-only. Preserved in full in `_archive/ORIGINAL_PLANNING_PACK.md`.
 
 Good discipline, honestly executed. But incomplete in coverage: **it described a
 simulation rather than a game** — no stakes, no goal, no failure, and player
@@ -265,8 +265,8 @@ Stage 5, the game is not the game this project describes.
 | `ROADMAP.md` | Stages, gates, questions passed forward |
 | `OPEN_QUESTIONS.md` | 19 questions, each with status and the stage that decides it |
 | `REVIEW_REPLIES.md` | Both external reviews in full |
-| `AUDIT_AND_RECOMMENDATIONS.md` | The first audit |
-| `ORIGINAL_PLANNING_PACK.md` | The superseded originals, preserved for audit |
+| `_archive/` | The superseded originals and the first audit, preserved for audit |
+| `_reference/` | `PROJECT_SUMMARY.md`, `WORKING_AGREEMENT.md` |
 
 ---
 

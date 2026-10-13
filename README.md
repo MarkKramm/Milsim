@@ -30,7 +30,10 @@ npm run headless -- --ticks 1440 --seed 12345
 
 ```
 military-base-sim-dev/
-  docs/            all planning documents — start at PROJECT_SUMMARY.md
+  docs/            current design — start at REVIEW_BRIEF.md
+  docs/_reference/ current, but not for external review
+  docs/_archive/   superseded, kept for audit — do not send to other assistants
+  tools/sync-docs.sh   copy docs to the phone mirror + refresh the media index
   src/
     sim/           the simulation. PURE. no UI, no DOM.
     ui/            React components. no rules.
@@ -52,19 +55,22 @@ Enforced by `tools/headless.ts`, which must keep working forever.
 
 ## Documentation
 
-Full map in `docs/PROJECT_SUMMARY.md`. The essentials:
+Full map in `AGENTS.md`. The essentials:
 
 | Document | What it covers |
 |---|---|
-| `PROJECT_SUMMARY.md` | **Start here** — orientation and status |
+| `REVIEW_BRIEF.md` | **Start here, and the one file to send another assistant** — self-contained |
+| `GAME_DESIGN_BLUEPRINT.md` | The system atlas — 24 systems, all 11 sections each |
 | `LOCKED_DECISIONS.md` | The settled design decisions, with corrections from external review |
+| `SYSTEM_DEPENDENCIES.md` | Ownership, tick order, cross-system chains, invariants |
 | `OPEN_QUESTIONS.md` | Every open question, its status, and the stage that answers it |
 | `ROADMAP.md` | Build order and gates |
 | `ARCHITECTURE.md` | Technical foundation |
-| `LONG_TERM_DESIGN.md` | What the full game eventually becomes |
-| `REVIEW_BRIEF.md` | **The one file to send another assistant** — self-contained |
-| `GAME_DESIGN_BLUEPRINT.md` | The system atlas — every system specified |
-| `SYSTEM_DEPENDENCIES.md` | Ownership, tick order, cross-system chains, invariants | |
+| `REVIEW_REPLIES.md` | Both external reviews: what was accepted, declined, and why |
+
+`_reference/` holds current but non-essential context. `_archive/` holds the
+superseded originals — **do not send those to another assistant**, since their
+older answers make a current design look self-contradictory.
 
 ---
 

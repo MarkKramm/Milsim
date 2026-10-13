@@ -392,6 +392,25 @@ chain, with the worn item inspectable before and after the repair.
 
 *(Conditional.)* Vehicles with fuel, maintenance, storage, crew, and equipment.
 
+**Gate:** **a dispatched vehicle can leave and not return.** Someone you have
+been watching for five days is now somewhere you cannot see or command, acting
+on judgement you did not write, and you cannot pause to ask why.
+
+*Added by the completeness audit. The summary table had promised this gate for
+several revisions while the section itself defined none — a stage that cannot be
+completed or deliberately abandoned can only be quietly abandoned, which is the
+exact failure the gate discipline exists to prevent.*
+
+**Also required:** that the crew's qualifications matter (a vehicle its crew
+cannot operate does not depart), and that cargo is genuinely gone when the
+vehicle is. A vehicle that is a fuel bar with an inventory attached fails this
+gate even if it dispatches successfully.
+
+**Watch for the trap:** vehicles are the most likely system in the project to
+turn the game into a logistics spreadsheet. If the player is optimising routes
+rather than watching people, pull back — this is the one stage where the risk of
+the genre changing is highest.
+
 ---
 
 ## Stage 10 — External operations and threats

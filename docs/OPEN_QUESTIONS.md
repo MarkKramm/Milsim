@@ -12,7 +12,10 @@ Every decision that is not fully settled, with its status, its alternatives, and
 **No question here blocks Stage 1.** Questions are grouped by the stage at which
 they become answerable.
 
-**19 questions, numbered Q16–Q35.** The numbering skips Q20: it was a question
+**21 questions, numbered Q16–Q37.** Q36–Q37 were added by the completeness audit
+(`AUDIT_FINDINGS.md`), which found gaps that no prior review had looked for.
+
+**21 questions, numbered Q16–Q37.** The numbering skips Q20: it was a question
 about log retention that the event-log design (§A3) had already answered by the
 time the list was written. It is recorded here rather than renumbered so the
 numbering stays stable against the earlier drafts and reviews that cite it.
@@ -303,6 +306,55 @@ The entire external layer is parked. It may never exist.
   remain a valid way to play.
 - **Decided by:** whether Stage 7–9 produce a game that already satisfies, and
   whether the developer wants it.
+
+---
+
+### Q36. What is supposed to emerge, and how will we know if it did? — OPEN
+
+*From the audit.* Emergence — consequences no one scripted — is the project's
+central premise and the entire justification for a pure simulation, a seeded
+event log and causal reporting. Searched across all documents, the concept
+appears **once**, in passing.
+
+There is no list of what should emerge, no mechanism that encourages it, no
+distinction between designed-for and merely-permitted emergence, and no test
+for whether it happened. The gate evidence asks *"did you notice something
+before the report told you?"*, which is a per-stage proxy, not a measurement of
+the property itself.
+
+- What are the **top three or four emergent behaviours** the game should be able
+  to produce? Naming them makes them designable; leaving them unnamed makes them
+  accidental.
+- Which are **structurally guaranteed** (a chain that cannot complete without
+  them) versus **merely possible**?
+- Is emergence better served by more systems, or by more contention between the
+  systems that exist?
+- **Decided by:** replaying a Stage 5 run and writing down every moment the
+  player noticed something not directly caused by their own command. If that
+  list is empty, no amount of additional systems will help.
+- **Note:** this is arguably the deepest question in the project, and it is
+  currently the *least* examined.
+
+---
+
+### Q37. What happens when the last person leaves? — OPEN
+
+*From the audit.* Undefined in every document. `F3` says "a collapsed base still
+leaves a record worth keeping", which is a statement about continuity rather
+than a rule about the run.
+
+The graduated consequence ladder (D1) ends at "leaves" and stops there.
+
+- Is it a **loss**, a **reset**, or an **ending with a summary**?
+- Can a collapsed base be **rebuilt** — can people be recruited or hired after
+  the last one goes?
+- Does the answer change if the project's rejection of fail states extends all
+  the way to total collapse, or is total collapse different in kind?
+- **Decided by:** reaching it. A terminal state is only discoverable by playing
+  toward it, which argues for **deliberately engineering a collapse scenario** at
+  Stage 5 rather than waiting for it by accident.
+- **Risk if left undefined:** the code will decide by accident, and an accidental
+  terminal state in a game about persistence is the worst possible default.
 
 ---
 

@@ -130,7 +130,7 @@ see Part 9.
 | **Code** | None. Empty directories and a `.gitignore` |
 | **Git** | Local commits only. Nothing pushed |
 | **External reviews** | Three, all acted upon |
-| **Open questions** | **19** (Q16–Q35), each with a named stage that answers it |
+| **Open questions** | **21** (Q16–Q37), each with a named stage that answers it |
 | **Next action** | Stage 1 — a simulation that ticks |
 | **Blocked on** | Nothing |
 
@@ -319,7 +319,7 @@ a base simulation with real contention. The reverse is not acceptable.
 | `ARCHITECTURE.md` | Technical foundation |
 | `LOCKED_DECISIONS.md` | The 12 decisions, with rationale and corrections |
 | `ROADMAP.md` | Stages, gates, questions passed forward |
-| `OPEN_QUESTIONS.md` | 19 questions, each with status and the stage that decides it |
+| `OPEN_QUESTIONS.md` | 21 questions, each with status and the stage that decides it |
 | `REVIEW_REPLIES.md` | Both external reviews in full |
 | `_archive/` | The superseded originals and the first audit, preserved for audit |
 | `_reference/` | `PROJECT_SUMMARY.md`, `WORKING_AGREEMENT.md` |

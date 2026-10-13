@@ -194,9 +194,10 @@ of a change plainly; do not silently alter scope.
 | `docs/GAME_DESIGN_BLUEPRINT.md` | **The system atlas** — 24 systems, all 11 sections each |
 | `docs/SYSTEM_DEPENDENCIES.md` | Who owns what, tick order, 5 cross-system chains, 15 invariants |
 | `docs/LOCKED_DECISIONS.md` | The full decision set with rationale, including corrections from external review |
-| `docs/OPEN_QUESTIONS.md` | 19 open questions (Q16–Q35), each with the stage that answers it |
+| `docs/OPEN_QUESTIONS.md` | 21 open questions (Q16–Q37), each with the stage that answers it |
 | `docs/ROADMAP.md` | Build order and evidence-based gates |
 | `docs/ARCHITECTURE.md` | Technical foundation, tick order, state shape, testing |
+| `docs/AUDIT_FINDINGS.md` | Completeness audit — what the later stages still lack |
 | `docs/REVIEW_REPLIES.md` | Both external reviews, what was accepted, what was declined, and why |
 | `docs/_reference/PROJECT_SUMMARY.md` | One-page orientation |
 | `docs/_reference/WORKING_AGREEMENT.md` | Where docs live, how to sync them, when to update what |

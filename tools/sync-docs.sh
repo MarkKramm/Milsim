@@ -23,7 +23,9 @@ rm -rf "$MIRROR/_archive" "$MIRROR/_reference" 2>/dev/null || true
 # --- rebuild the single-file bundles before they are copied --------------
 # Regenerated here rather than committed, so a sync can never ship a bundle
 # describing an older commit than the documents sitting beside it.
-tools/build-master.sh
+# Invoked through `bash` rather than executed directly: the shebang on that
+# script is the Termux bash path, which does not exist elsewhere.
+bash tools/build-master.sh
 
 # --- stamp the brief so a stale copy is obvious at a glance ----------------
 # When this document is pasted into another assistant there is no upload

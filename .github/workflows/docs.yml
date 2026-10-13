@@ -1,0 +1,127 @@
+name: docs
+
+# The repository currently contains design documents and no code. This workflow
+# therefore checks the documents, not the software.
+#
+# Its one real job: the single-file bundles other assistants receive
+# (PROJECT_MASTER.md, PROJECT_CORE.md) are generated, and generated files drift
+# silently. If someone edits a document and forgets to rebuild, the bundle they
+# upload describes a design that no longer exists - and nothing anywhere reports
+# an error. This is that report.
+#
+# When Stage 1 lands, add a separate `build` workflow for typecheck, tests and
+# the headless runner. Keep this one about the documents.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Rebuild the single-file bundles
+        run: bash tools/build-master.sh
+
+      - name: Verify the bundles are complete and exclude the archive
+        run: |
+          # The bundles are gitignored, so a checkout has none of them and
+          # `git diff` cannot compare anything - an earlier version of this
+          # check compared them and therefore passed unconditionally, which is
+          # worse than no check at all. Assert on the built output instead.
+          fail=0
+
+          for f in PROJECT_MASTER.md PROJECT_CORE.md; do
+            [ -s "$f" ] || { echo "::error::$f was not built"; fail=1; continue; }
+          done
+
+          # Every current document must appear as a merged section.
+          while read -r doc; do
+            if ! grep -q "^# ── ${doc}$" PROJECT_MASTER.md; then
+              echo "::error::PROJECT_MASTER.md is missing a section for ${doc}"
+              fail=1
+            fi
+          done <<'EOF'
+          REVIEW_BRIEF.md
+          LOCKED_DECISIONS.md
+          ARCHITECTURE.md
+          SYSTEM_DEPENDENCIES.md
+          GAME_DESIGN_BLUEPRINT.md
+          ROADMAP.md
+          OPEN_QUESTIONS.md
+          AUDIT_FINDINGS.md
+          REVIEW_REPLIES.md
+          EOF
+
+          # The archive must stay out. Its files predate the reviews and hold
+          # answers that were later reversed; shipping them makes a consistent
+          # design look self-contradictory.
+          #
+          # Checked by looking for archive files as merged sections, not by
+          # grepping for "_archive/" - current documents legitimately *cite*
+          # archived ones, and flagging those citations would fail every run.
+          for doc in AUDIT_AND_RECOMMENDATIONS CORE_LOOP DECISIONS_ANSWERED \
+                     DECISIONS_TO_APPROVE FOUNDATION_DECISIONS GAME_VISION \
+                     IMPLEMENTATION_STAGES LONG_TERM_DESIGN MASTER_PROMPT \
+                     ORIGINAL_PLANNING_PACK PROTOTYPE_SPEC; do
+            for f in PROJECT_MASTER.md PROJECT_CORE.md; do
+              if grep -q "^# ── ${doc}.md$" "$f"; then
+                echo "::error::$f merges archived content: ${doc}.md"
+                fail=1
+              fi
+            done
+          done
+
+          [ "$fail" -eq 0 ] && echo "Bundles built, complete, and archive-free."
+          exit $fail
+
+      - name: Check every cross-document reference resolves
+        run: |
+          fail=0
+          # Pull `FOO.md` references out of the active documents and confirm each
+          # target exists. Files may live in docs/, one of its tier
+          # subfolders, or the repository root.
+          refs=$(grep -rhoE '`[A-Za-z_]+\.md`' docs/*.md docs/_reference/*.md AGENTS.md README.md \
+                 | tr -d '`' | sort -u)
+          for ref in $refs; do
+            if [ -f "docs/$ref" ] \
+               || [ -f "docs/_archive/$ref" ] \
+               || [ -f "docs/_reference/$ref" ] \
+               || [ -f "$ref" ] \
+               || [ "$ref" = "INDEX.md" ]; then   # generated into the mirror only
+              continue
+            fi
+            echo "::error::referenced document does not exist: $ref"
+            fail=1
+          done
+          [ "$fail" -eq 0 ] && echo "All $(echo "$refs" | wc -l | tr -d ' ') references resolve."
+          exit $fail
+
+      - name: Check the archive warning is intact
+        run: |
+          # The generated bundles must keep excluding docs/_archive. Its
+          # contents predate the reviews and contain answers that were later
+          # reversed, so including them makes a consistent design look broken.
+          for f in PROJECT_MASTER.md PROJECT_CORE.md; do
+            if grep -q "_archive/LONG_TERM_DESIGN" "$f"; then
+              echo "::error::$f contains archived content. Archive files must stay out of the bundles."
+              exit 1
+            fi
+          done
+          echo "Bundles exclude the archive."
+
+      - name: Confirm no secrets were committed
+        run: |
+          # Cheap tripwire. The design documents should never contain
+          # credentials; if one appears, fail loudly rather than in a fork's PR.
+          if git grep -nIE '(BEGIN [A-Z ]*PRIVATE KEY|ghp_[A-Za-z0-9]{20,}|sk-[A-Za-z0-9]{20,}|api[_-]?key[[:space:]]*[:=])' \
+               -- . ':!docs/_archive' > .secretscan 2>/dev/null; then
+            echo "::error::possible credential committed:"
+            cat .secretscan
+            exit 1
+          fi
+          echo "No credentials found."

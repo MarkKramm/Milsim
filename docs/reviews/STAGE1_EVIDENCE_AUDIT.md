@@ -496,3 +496,48 @@ condition, but the honest summary is *verified in Node*, not *verified*.
 **Do not read this as endorsement of Stage 2.** Stage 2's gate asks whether
 watching personnel work is interesting. Stage 1 contains no personnel and cannot
 answer it, and per `ROADMAP.md` that gate is the easiest in the project to fake.
+---
+
+# Addendum — findings actioned
+
+**Applied at commit `e86113e`.** This addendum records what was done with each
+finding above. It does not replace the audit; the audit's evidence stands as
+written.
+
+## Resolved
+
+| # | Finding | Resolution |
+|---|---|---|
+| **D1** | `setSpeed` discarded elapsed time while running | `controller.ts` resets the frame baseline only when `wasPaused`. Two regression tests added; **both verified to fail against the old code** |
+| **H1** | `draftOf` shares event objects, mutability by convention only | `Event` fields are `readonly`, nested collections `Readonly`, and each event is `Object.freeze`d at creation. Sharing is now safe by construction |
+| **O1** | `state.ts` claimed no shared mutable structure | Reworded to the precise guarantee: none at the top level; nested events are shared *and immutable* |
+| **O2** | Test named for a property it could not detect | Renamed to what it verifies, plus a new test that covers the hazard with a non-empty log |
+| **O3** | Test named for the cap; cap never engaged (peak 8/240) | Renamed to the conservation invariant it actually checks |
+| **O4** | Test named "backlog drains"; backlog grew | Renamed to "the cap binds when a frame owes more than the cap" |
+| **RNG gaps** | Serialize/restore and sequence equality were probe-only | Three tests committed: mid-stream round-trip reproduces the next draw exactly, 500-draw sequences match for equal seeds, all draws differ between seeds |
+| **A1** | Speed-change re-valuation undocumented | New row in the `ROADMAP.md` Stage 1 contract |
+| **A2** | Digest scope unstated | Documented in `headless.ts`: it covers the event log only, so it is seed-identical at Stage 1 by design |
+| — | `1440` duplicated as a literal in `App.tsx` | Replaced with `TICKS_PER_DAY` |
+
+**Tests: 89 → 95.** `npm run verify` exits 0. Both CI workflows green.
+
+## A note on the regression tests
+
+The first version of the second regression test drove the controller through
+`step()`, which takes an explicit delta and never reads `lastFrameMs` — so it
+**could not detect the defect it was written for**. It passed against the buggy
+code. It was rewritten to drive the frame loop, which is where the defect lives.
+
+Both tests were then confirmed to fail when the fix is reverted and pass when it
+is applied. A test that has never been observed failing is not evidence.
+
+## Still outstanding
+
+- **The phone manual gate.** Never performed. `src/ui/App.tsx` is imported by no
+  test, so CI cannot speak to it.
+- `NOTIFY_INTERVAL_MS` render cadence — unobservable without a browser.
+- Behaviour with a large log.
+
+The defect fixed in D1 was found by a probe with a real clock taking under a
+minute, after 89 tests had passed for days. That is worth carrying into Stage 2:
+the suite is necessary and it is not sufficient.

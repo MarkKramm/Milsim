@@ -111,10 +111,16 @@ test('only rng.ts advances the RNG cursor', () => {
 });
 
 test('the simulation contains no placeholder systems for future stages', () => {
-  // Stage 1 implements phase 0 only. An empty array standing in for personnel or
-  // facilities would be indistinguishable from a working system until the day it
-  // silently does the wrong thing.
-  const forbiddenFields = ['personnel', 'facilities', 'jobs', 'storage', 'items', 'readiness', 'resources'];
+  // Stage 2 implements phases 0 and 5: Personnel, Facilities and Jobs are real
+  // systems now, so `personnel`, `facilities` and `jobs` were removed from this
+  // list when their owning systems arrived (`ARCHITECTURE.md` §3).
+  //
+  // What remains forbidden are the Stage 3 and Stage 7 fields. An empty array
+  // standing in for storage, items, readiness or resources would be
+  // indistinguishable from a working system until the day it silently does the
+  // wrong thing — and `readiness` in particular must never be persisted at all,
+  // because invariant 12 requires that no system may read a stored copy.
+  const forbiddenFields = ['storage', 'items', 'readiness', 'resources'];
   for (const [name, source] of readAll()) {
     const interfaceBody = source.match(/export interface SimState \{([\s\S]*?)\n\}/)?.[1] ?? '';
     for (const field of forbiddenFields) {

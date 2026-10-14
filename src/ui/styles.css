@@ -115,3 +115,85 @@ h1 {
     background: #fff;
   }
 }
+
+/* ── Stage 2: roster and facility cards ───────────────────────────────────── */
+
+h2 {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin: 1.5rem 0 0.5rem;
+}
+
+h3 {
+  font-size: 0.95rem;
+  margin: 0 0 0.25rem;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.card {
+  background: #191d26;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  padding: 0.6rem 0.7rem;
+}
+
+.card .big {
+  font-size: 1.4rem;
+  margin: 0.1rem 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.card .big .muted,
+.card p {
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+.warn {
+  color: #ffb454;
+}
+
+.roster {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.roster li {
+  background: #191d26;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  padding: 0.55rem 0.7rem;
+  margin-bottom: 0.4rem;
+}
+
+.roster li.standby {
+  opacity: 0.72;
+}
+
+.roster .who {
+  font-size: 0.95rem;
+}
+
+.roster .what {
+  font-size: 0.85rem;
+  color: var(--accent);
+}
+
+.roster .why {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-top: 0.1rem;
+}
+
+.muted {
+  color: var(--muted);
+  font-weight: 400;
+}

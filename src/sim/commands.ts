@@ -13,15 +13,27 @@
 
 import type { SimState } from './state';
 import { emit } from './events';
+import { isPriority, priorityIntent, readPriority, PRIORITY_INTENT_ID } from './priority';
 
 /**
- * Stage 1 defines **no** gameplay commands, so this union is empty.
+ * The Stage 2 command surface.
  *
- * That is a deliberate statement, not an omission: it makes it impossible to
- * write a command handler for a system that does not exist yet. A later stage
- * adds variants here, and only then does `applyCommands` grow real behaviour.
+ * `ROADMAP.md` §Stage 2 authorises exactly one: *"One simple player intent: a
+ * priority order between two competing kinds of work. That is the entire command
+ * surface at this stage."* Named-option decisions (`D2`) are Stage 4.
+ *
+ * The union being non-empty is the point of the earlier `never`: it made it
+ * impossible to write a handler for a system that does not exist yet.
  */
-export type Command = never;
+export type Command =
+  | { readonly type: 'set_priority'; readonly value: string };
+
+/** Narrow an unknown value. Rejection is recorded, never silent (`GAME_DESIGN_BLUEPRINT.md` A4). */
+export function isCommand(value: unknown): value is Command {
+  if (typeof value !== 'object' || value === null || !('type' in value)) return false;
+  if ((value as { type: unknown }).type !== 'set_priority') return false;
+  return 'value' in value;
+}
 
 /**
  * Append a command without mutating the caller's state.
@@ -39,15 +51,21 @@ export function enqueue(state: SimState, command: Command): SimState {
 /**
  * Drain the queue in FIFO order, then empty it.
  *
- * Stage 1 has no valid command, so every command reaching here is rejected —
- * and rejection is *recorded*, not silent (`GAME_DESIGN_BLUEPRINT.md` A4: an
- * invalid command must fail loudly rather than vanishing). The path exists and
- * is tested now, so that when real commands arrive the queue already behaves.
+ * Applied at tick step 2, before any system reacts, so a command issued during
+ * tick N takes effect at tick N+1 — never mid-tick, never twice, never lost
+ * (`GAME_DESIGN_BLUEPRINT.md` A4 §3).
+ *
+ * Invalid commands are **rejected with a recorded reason**, not silently dropped
+ * (A4 §7, C1 §3). One command applies exactly once.
  */
 export function applyCommands(draft: SimState): void {
   if (draft.pendingCommands.length === 0) return;
 
   for (const command of draft.pendingCommands) {
+    if (isCommand(command) && command.type === 'set_priority') {
+      applySetPriority(draft, command.value);
+      continue;
+    }
     emit(draft, {
       type: 'command_rejected',
       tier: 'routine',
@@ -55,6 +73,30 @@ export function applyCommands(draft: SimState): void {
     });
   }
   draft.pendingCommands = [];
+}
+
+function applySetPriority(draft: SimState, value: unknown): void {
+  if (!isPriority(value)) {
+    emit(draft, {
+      type: 'command_rejected',
+      tier: 'routine',
+      data: { command: `set_priority:${String(value)}`, reason: 'unknown priority' },
+    });
+    return;
+  }
+
+  const from = readPriority(draft.intent);
+  if (from === value) return; // No change is not an event.
+
+  draft.intent = [
+    ...draft.intent.filter((entry) => entry.id !== PRIORITY_INTENT_ID),
+    priorityIntent(value),
+  ];
+  emit(draft, {
+    type: 'intent_changed',
+    tier: 'routine',
+    data: { from, to: value },
+  });
 }
 
 /**

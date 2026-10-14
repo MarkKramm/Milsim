@@ -1,23 +1,23 @@
 /**
  * The interface.
  *
- * Reads a snapshot and offers four speed controls. It contains **no simulation
- * rules** and never writes authoritative state — if a React component decided
- * anything about how the world works, that would be a bug (`D9`).
+ * Reads a snapshot and sends commands. It contains **no simulation rules** and
+ * never writes authoritative state — if a React component decided anything about
+ * how the world works, that would be a bug (`D9`).
  *
- * Deliberately plain. Stage 1 has no people, jobs or needs, so there is nothing
- * to build a dashboard out of yet, and inventing one would be building a
- * prototype of a game that does not exist. This is a panel of live numbers whose
- * job is to make the time model visible.
+ * Every number and every row here is derived by the controller from simulation
+ * state. The priority buttons issue a command; they do not set anything.
  */
 
 import { useEffect, useState } from 'react';
 
 import { createController } from '../controller/controller';
-import type { Snapshot } from '../controller/controller';
+import type { RosterEntry, Snapshot } from '../controller/controller';
 import { SPEEDS } from '../controller/timeline';
-import { TICKS_PER_DAY } from '../sim/time';
 import type { SpeedName } from '../controller/timeline';
+import { PRIORITIES } from '../sim/priority';
+import type { Priority } from '../sim/priority';
+import { TICKS_PER_DAY } from '../sim/time';
 
 const SPEED_ORDER: SpeedName[] = ['pause', '1x', '4x', '16x'];
 
@@ -26,6 +26,18 @@ const SPEED_LABELS: Record<SpeedName, string> = {
   '1x': '1×',
   '4x': '4×',
   '16x': '16×',
+};
+
+const PRIORITY_LABELS: Record<Priority, string> = {
+  balanced: 'Balanced',
+  'maintenance-first': 'Maintenance first',
+  'meals-first': 'Meals first',
+};
+
+const PRIORITY_HINTS: Record<Priority, string> = {
+  balanced: 'Works whichever queue is deeper.',
+  'maintenance-first': 'Workshop first. Meals will back up.',
+  'meals-first': 'Kitchen first. Workshop will back up.',
 };
 
 /** Seconds of real time an in-game day takes at this speed. */
@@ -49,6 +61,9 @@ export function App(): JSX.Element {
   }, [controller]);
 
   const setSpeed = (speed: SpeedName): void => controller.setSpeed(speed);
+  const setPriority = (priority: Priority): void => controller.setPriority(priority);
+
+  const completed = (snapshot.completedToday.maintenance ?? 0) + (snapshot.completedToday.meals ?? 0);
 
   return (
     <main className="panel">
@@ -58,21 +73,64 @@ export function App(): JSX.Element {
 
       <dl className="values">
         <Row label="Tick" value={snapshot.tick.toLocaleString()} />
-        <Row label="Elapsed in-game minutes" value={snapshot.elapsedMinutes.toLocaleString()} />
+        <Row label="Completed" value={completed.toLocaleString()} />
         <Row label="Seed" value={String(snapshot.seed)} />
-        <Row label="RNG cursor" value={String(snapshot.rngCursor)} />
-        <Row label="Events this tick" value={String(snapshot.eventsThisTick)} />
-        <Row label="Log length" value={String(snapshot.logLength)} />
-        <Row label="Backlog" value={String(snapshot.backlogTicks)} />
       </dl>
+
+      <section className="board">
+        <h2>Facilities</h2>
+        <div className="cards">
+          {snapshot.facilities.map((facility) => (
+            <article className="card" key={facility.id}>
+              <h3>
+                {facility.label} <span className="muted">{facility.jobLabel}</span>
+              </h3>
+              <p className="big">
+                {facility.used}/{facility.capacity}
+                <span className="muted"> busy</span>
+              </p>
+              <p className={facility.pending > 40 ? 'warn' : undefined}>
+                {facility.pending} waiting
+              </p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="board">
+        <h2>Roster</h2>
+        <ul className="roster">
+          {snapshot.roster.map((person) => (
+            <RosterRow person={person} key={person.id} />
+          ))}
+        </ul>
+      </section>
+
+      <section className="board">
+        <h2>Work priority</h2>
+        <div className="speeds" role="group" aria-label="Work priority">
+          {PRIORITIES.map((priority) => (
+            <button
+              key={priority}
+              type="button"
+              className={snapshot.priority === priority ? 'active' : ''}
+              aria-pressed={snapshot.priority === priority}
+              onClick={() => setPriority(priority)}
+            >
+              {PRIORITY_LABELS[priority]}
+            </button>
+          ))}
+        </div>
+        <p className="hint">{PRIORITY_HINTS[snapshot.priority]}</p>
+      </section>
 
       <div className="speeds" role="group" aria-label="Simulation speed">
         {SPEED_ORDER.map((speed) => (
           <button
             key={speed}
             type="button"
-            className={speed === snapshot.speed ? 'active' : ''}
-            aria-pressed={speed === snapshot.speed}
+            className={snapshot.speed === speed ? 'active' : ''}
+            aria-pressed={snapshot.speed === speed}
             onClick={() => setSpeed(speed)}
           >
             {SPEED_LABELS[speed]}
@@ -83,9 +141,25 @@ export function App(): JSX.Element {
       <p className="hint">
         A day is {TICKS_PER_DAY.toLocaleString()} minutes. At 1× it takes about {dayLengthAt('1x')}; at 16×,{' '}
         {dayLengthAt('16x')}.
-        {' '}The RNG cursor stays at 0 because Stage 1 draws no randomness — that is correct, not a bug.
       </p>
     </main>
+  );
+}
+
+function RosterRow({ person }: { person: RosterEntry }): JSX.Element {
+  const percent =
+    person.durationTicks === 0 ? 0 : Math.round((person.progressTicks / person.durationTicks) * 100);
+  return (
+    <li className={person.standby ? 'standby' : undefined}>
+      <div className="who">
+        <strong>{person.name}</strong> <span className="muted">{person.role}</span>
+      </div>
+      <div className="what">
+        {person.task}
+        {person.standby ? '' : <span className="muted"> — {percent}%</span>}
+      </div>
+      <div className="why">{person.reason}</div>
+    </li>
   );
 }
 

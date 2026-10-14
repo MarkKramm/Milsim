@@ -12,13 +12,39 @@
  * behaviour can still be exercised directly.
  */
 
-import { tick } from '../sim/tick';
+import { tick, standbyReason, capacityUsed } from '../sim/tick';
 import { createRun } from '../sim/state';
 import type { SimState } from '../sim/state';
 import { dayOf, elapsedInGameMinutes, periodOf } from '../sim/time';
 import { DEFAULT_SEED } from '../sim/rng';
+import { enqueue } from '../sim/commands';
+import type { Command } from '../sim/commands';
+import { readPriority, isPriority } from '../sim/priority';
+import type { Priority } from '../sim/priority';
 import { MAX_TICKS_PER_FRAME, SPEEDS, advance, owedTicksAt } from './timeline';
 import type { SpeedName } from './timeline';
+
+/** One roster row: who, what, and why. All derived, none stored. */
+export interface RosterEntry {
+  id: string;
+  name: string;
+  role: string;
+  task: string;
+  reason: string;
+  progressTicks: number;
+  durationTicks: number;
+  standby: boolean;
+}
+
+/** One facility card: how full it is, and how much work is waiting. */
+export interface FacilityEntry {
+  id: string;
+  label: string;
+  capacity: number;
+  used: number;
+  pending: number;
+  jobLabel: string;
+}
 
 /** Everything the UI is allowed to read. All of it derived, none of it authoritative. */
 export interface Snapshot {
@@ -33,6 +59,12 @@ export interface Snapshot {
   speed: SpeedName;
   /** Owed ticks not yet processed. Diagnostic only. */
   backlogTicks: number;
+  /** Stage 2 — the roster and the facility cards. */
+  priority: Priority;
+  roster: RosterEntry[];
+  facilities: FacilityEntry[];
+  /** Counts by type, so the player can see what the base has been doing. */
+  completedToday: Record<string, number>;
 }
 
 export interface ControllerOptions {
@@ -99,7 +131,7 @@ export class Controller {
     return this.running;
   }
 
-  /** Read-only view for the UI. */
+  /** Read-only view for the UI. Everything here is derived on read. */
   snapshot(): Snapshot {
     return {
       day: dayOf(this.state.tick),
@@ -112,7 +144,87 @@ export class Controller {
       logLength: this.state.log.length,
       speed: this.speed,
       backlogTicks: this.backlogTicks,
+      priority: readPriority(this.state.intent),
+      roster: this.roster(),
+      facilities: this.state.facilities.map((facility) => ({
+        id: facility.id,
+        label: facility.label,
+        capacity: facility.capacity,
+        used: capacityUsed(facility, this.state.personnel),
+        pending:
+          this.state.jobs.find((job) => job.facilityId === facility.id)?.pending ?? 0,
+        jobLabel:
+          this.state.jobs.find((job) => job.facilityId === facility.id)?.label ?? '',
+      })),
+      completedToday: this.completedByType(),
     };
+  }
+
+  /**
+   * Issue a command.
+   *
+   * Commands go through the queue and are applied at the next tick step 2, so a
+   * change issued now takes effect on the next tick — never mid-tick, never
+   * twice, never lost (`GAME_DESIGN_BLUEPRINT.md` A4). The controller appends;
+   * it never writes simulation state directly.
+   */
+  issue(command: Command): void {
+    this.state = enqueue(this.state, command);
+  }
+
+  /**
+   * Set the work priority. Stage 2's entire player command surface.
+   *
+   * Rejects an unknown value here rather than sending it, so the interface never
+   * offers a control the simulation cannot honour. The simulation rejects
+   * unknown commands too — this is the first of two lines of defence, not a
+   * replacement for the second.
+   */
+  setPriority(value: Priority): void {
+    if (!isPriority(value)) return;
+    this.issue({ type: 'set_priority', value });
+  }
+
+  /** Build the roster for display. Derived, never written into state. */
+  private roster(): RosterEntry[] {
+    return this.state.personnel.map((person) => {
+      const task = person.currentTask;
+      const job =
+        task === null
+          ? undefined
+          : this.state.jobs.find((candidate) => candidate.id === task.jobId);
+
+      return {
+        id: person.id,
+        name: person.name,
+        role: person.role,
+        task: job?.label ?? 'Standby',
+        reason:
+          task === null
+            ? standbyReason(person, this.state.jobs, this.state.facilities, this.state.personnel)
+            : task.reason,
+        progressTicks: task?.progressTicks ?? 0,
+        durationTicks: job?.durationTicks ?? 0,
+        standby: task === null,
+      };
+    });
+  }
+
+  /**
+   * Completions so far this run, by job type.
+   *
+   * Read from the log rather than counted separately, so an event cannot be
+   * missed or counted twice — the same rule the Stage 1 log-growth counter uses.
+   */
+  private completedByType(): Record<string, number> {
+    const counts: Record<string, number> = { maintenance: 0, meals: 0 };
+    for (const event of this.state.log) {
+      if (event.type !== 'task_completed') continue;
+      const jobId = event.subjects[1];
+      if (jobId === undefined) continue;
+      counts[jobId] = (counts[jobId] ?? 0) + 1;
+    }
+    return counts;
   }
 
   subscribe(listener: (snapshot: Snapshot) => void): () => void {

@@ -26,6 +26,13 @@
 import type { Event } from './events';
 import type { Command } from './commands';
 import type { Intent } from './intent';
+import type { Person } from './personnel';
+import type { Job } from './jobs';
+import type { Facility } from './facilities';
+import { FIXTURE_ROLES, buildRoster } from './personnel';
+import { createJobs } from './jobs';
+import { FACILITIES } from './facilities';
+import { rand } from './rng';
 
 export interface SimState {
   /** Master seed for the run. Displayed so a run can be shared or reproduced. */
@@ -42,6 +49,12 @@ export interface SimState {
   pendingCommands: Command[];
   /** First-class player policy data. Empty at Stage 1. */
   intent: Intent[];
+  /** Stage 2 — Personnel owns every field inside. */
+  personnel: Person[];
+  /** Stage 2 — Jobs owns definitions, queues and arrival state. */
+  jobs: Job[];
+  /** Stage 2 — Facilities owns capacity. Written by Facilities alone. */
+  facilities: Facility[];
 }
 
 /**
@@ -50,9 +63,14 @@ export interface SimState {
  * `log` starts empty and `nextEventId` at 0, so the first appended event is
  * id 0 — ids are sequential from the beginning rather than starting at 1 and
  * wasting an id for a thing that never existed.
+ *
+ * Stage 2 builds the seven-person reference roster and the two facilities here,
+ * so a run is complete the moment it is made. Names are drawn from the seeded
+ * stream, so `rngCursor` is **7** immediately after this call and never grows
+ * again: nothing else in Stage 2 consumes randomness.
  */
 export function createRun(seed: number): SimState {
-  return {
+  const state: SimState = {
     seed: seed >>> 0,
     rngCursor: 0,
     tick: 0,
@@ -60,7 +78,19 @@ export function createRun(seed: number): SimState {
     log: [],
     pendingCommands: [],
     intent: [],
+    personnel: [],
+    jobs: createJobs(),
+    facilities: FACILITIES.map((facility) => ({ ...facility })),
   };
+
+  // Names come from the seeded stream and nowhere else (B1 §3). Drawing through
+  // `rand()` — rather than calling the generator directly — is what keeps
+  // invariant 11 true: the cursor advances in exactly one place.
+  const draws: number[] = [];
+  for (let i = 0; i < FIXTURE_ROLES.length; i += 1) draws.push(rand(state));
+  state.personnel = buildRoster(draws);
+
+  return state;
 }
 
 /**
@@ -86,6 +116,9 @@ export function draftOf(state: SimState): SimState {
     log: [...state.log],
     pendingCommands: [...state.pendingCommands],
     intent: [...state.intent],
+    personnel: state.personnel.map((person) => ({ ...person })),
+    jobs: state.jobs.map((job) => ({ ...job })),
+    facilities: state.facilities.map((facility) => ({ ...facility })),
   };
 }
 

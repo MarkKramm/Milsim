@@ -60,21 +60,55 @@ test('cursor stays a 32-bit unsigned count', () => {
   assert.ok(cursor >= 0 && cursor <= 0xffffffff);
 });
 
-test('a fresh run has a zero cursor', () => {
-  assert.equal(createRun(DEFAULT_SEED).rngCursor, 0);
+/**
+ * Draws taken when a run is created, to name the seven-person roster.
+ * `personnel.ts` `buildRoster` consumes exactly one draw per person.
+ */
+const ROSTER_DRAWS = 7;
+
+test('a fresh run has drawn exactly once per person, to name the roster', () => {
+  // Was zero at Stage 1: a fresh run drew nothing. Stage 2 names the roster at
+  // creation time (B1 §3 — names come from the seeded stream and nowhere else),
+  // so the cursor is 7 immediately after `createRun`. Nothing else in Stage 2
+  // consumes randomness, so it never moves again.
+  assert.equal(createRun(DEFAULT_SEED).rngCursor, ROSTER_DRAWS);
+  assert.equal(createRun(DEFAULT_SEED).personnel.length, ROSTER_DRAWS);
+});
+
+test('the roster names are distinct, and differ between seeds', () => {
+  for (const seed of [DEFAULT_SEED, 1, 2, 4242, 777, 31337, 99]) {
+    const names = createRun(seed).personnel.map((p) => p.name);
+    assert.equal(new Set(names).size, names.length, `duplicate name at seed ${seed}: ${names}`);
+  }
+  assert.notDeepEqual(
+    createRun(DEFAULT_SEED).personnel.map((p) => p.name),
+    createRun(4242).personnel.map((p) => p.name),
+  );
 });
 
 test('rand() advances the cursor by exactly one step per draw', () => {
   const draft = createRun(DEFAULT_SEED);
-  assert.equal(draft.rngCursor, 0);
+  assert.equal(draft.rngCursor, ROSTER_DRAWS);
 
+  // The next draw is number 8, not number 1: the roster consumed the first
+  // seven. Asserting against the published vector for draw 8 proves the stream
+  // position is tracked, not merely counted.
   const first = rand(draft);
-  assert.equal(draft.rngCursor, 1);
-  assert.equal(first, VECTORS_20260101[0]?.[1]);
+  assert.equal(draft.rngCursor, ROSTER_DRAWS + 1);
+  assert.equal(first, mulberry32(DEFAULT_SEED, ROSTER_DRAWS + 1));
 
   const second = rand(draft);
-  assert.equal(draft.rngCursor, 2);
-  assert.equal(second, VECTORS_20260101[1]?.[1]);
+  assert.equal(draft.rngCursor, ROSTER_DRAWS + 2);
+  assert.equal(second, mulberry32(DEFAULT_SEED, ROSTER_DRAWS + 2));
+});
+
+test('a state with the cursor at zero still yields draw one first', () => {
+  // Keeps the published vectors tied to their own starting point, so the test
+  // above cannot drift silently if the roster's draw count ever changes.
+  const draft = draftOf(createRun(DEFAULT_SEED));
+  draft.rngCursor = 0;
+  assert.equal(rand(draft), VECTORS_20260101[0]?.[1]);
+  assert.equal(rand(draft), VECTORS_20260101[1]?.[1]);
 });
 
 test('different seeds are representable and coerced to uint32', () => {

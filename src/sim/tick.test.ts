@@ -6,7 +6,7 @@ import type { SimState } from './state';
 import { run, tick } from './tick';
 import { enqueue } from './commands';
 import type { Command } from './commands';
-import { DAY_ROLLOVER, causalReferencesAreValid, countByTier } from './events';
+import { DAY_ROLLOVER, causalReferencesAreValid } from './events';
 import { TICKS_PER_DAY, dayOf } from './time';
 import { DEFAULT_SEED } from './rng';
 
@@ -22,20 +22,25 @@ test('a fresh run is Day 1, Night, with an empty log', () => {
   assert.equal(dayOf(s.tick), 1);
   assert.equal(s.log.length, 0);
   assert.equal(s.nextEventId, 0);
-  assert.equal(s.rngCursor, 0, 'Stage 1 draws nothing');
+  assert.equal(s.rngCursor, 7, 'Stage 2 draws once per person, to name the roster');
+  assert.equal(s.personnel.length, 7);
+  assert.equal(s.facilities.length, 2);
 });
 
 test('tick 0 emits no rollover — a start is not a completion', () => {
   const s = tick(createRun(DEFAULT_SEED));
-  assert.equal(s.log.length, 0, 'advancing to tick 1 must not announce a day');
+  const rollovers = s.log.filter((e) => e.type === DAY_ROLLOVER);
+  assert.equal(rollovers.length, 0, 'advancing to tick 1 must not announce a day');
+  // Stage 2 does emit work events on tick 1; what must not appear is a day.
+  assert.ok(s.log.length > 0, 'work should have started');
 });
 
 test('advancing to 1440 emits exactly one Day 2 rollover', () => {
   const s = run(createRun(DEFAULT_SEED), TICKS_PER_DAY);
   assert.equal(s.tick, 1440);
-  assert.equal(s.log.length, 1);
-  const event = s.log[0]!;
-  assert.equal(event.type, DAY_ROLLOVER);
+  const rollovers = s.log.filter((e) => e.type === DAY_ROLLOVER);
+  assert.equal(rollovers.length, 1, 'exactly one day boundary in one day');
+  const event = rollovers[0]!;
   assert.equal(event.tier, 'routine');
   assert.equal(event.data.day, 2);
   assert.equal(event.tick, 1440);
@@ -44,24 +49,32 @@ test('advancing to 1440 emits exactly one Day 2 rollover', () => {
 test('ten days of ticks produce ten rollovers, sequential and correctly numbered', () => {
   const s = run(createRun(DEFAULT_SEED), TICKS_PER_DAY * 10);
   assert.equal(s.tick, 14400);
+  const rollovers = s.log.filter((e) => e.type === DAY_ROLLOVER);
   // Boundaries at 1440..14400 = 10 rollovers, announcing days 2 through 11.
-  assert.equal(s.log.length, 10, 'days 2..11 = 10 rollovers');
+  assert.equal(rollovers.length, 10, 'days 2..11 = 10 rollovers');
 
-  s.log.forEach((event, i) => {
-    assert.equal(event.id, i, 'ids are sequential');
+  rollovers.forEach((event, i) => {
     assert.equal(event.tick, (i + 1) * TICKS_PER_DAY);
     assert.equal(event.data.day, i + 2);
   });
-  assert.equal(countByTier(s.log).routine, 10);
 });
 
-test('every rollover event lands on a boundary and no others appear', () => {
+test('every rollover event lands on a day boundary', () => {
   const s = run(createRun(DEFAULT_SEED), TICKS_PER_DAY * 3 + 137);
-  for (const event of s.log) {
-    assert.equal(event.type, DAY_ROLLOVER);
+  const rollovers = s.log.filter((e) => e.type === DAY_ROLLOVER);
+  assert.equal(rollovers.length, 3, 'a partial day adds no rollover');
+  for (const event of rollovers) {
     assert.ok(event.tick % TICKS_PER_DAY === 0, `rollover at ${event.tick}`);
   }
-  assert.equal(s.log.length, 3, 'a partial day adds no event');
+});
+
+test('event ids stay sequential across a log that now mixes types', () => {
+  // The rollover tests above used to assert `event.id === i` over the whole log.
+  // That is still a real invariant, but it can no longer be checked by counting
+  // rollovers, so it is asserted directly here.
+  const s = run(createRun(DEFAULT_SEED), TICKS_PER_DAY * 2);
+  assert.ok(s.log.length > 100, 'the log should be substantial');
+  s.log.forEach((event, i) => assert.equal(event.id, i, `id ${i} is out of order`));
 });
 
 test('causal references are valid', () => {
@@ -87,7 +100,7 @@ test('tick does not mutate the state it was given', () => {
   assert.notEqual(after, before);
   assert.equal(before.tick, 0);
   assert.equal(before.log.length, 0);
-  assert.equal(before.rngCursor, 0);
+  assert.equal(before.rngCursor, 7, 'the roster is named once, at creation');
 });
 
 test('the previous state stays usable after being ticked', () => {
@@ -124,17 +137,22 @@ test('a shared event cannot be mutated, and the original is unaffected', () => {
   // *original* state's event, which would rewrite history that the causal report
   // depends on.
   const state = run(createRun(DEFAULT_SEED), 1440);
-  assert.ok(state.log.length > 0, 'precondition: a non-empty log with a real event');
+  // Stage 1 read `log[0]` expecting the day rollover. Stage 2's log is mixed, so
+  // the rollover is found by type instead — the immutability guarantee under test
+  // is unchanged.
+  const rollover = state.log.find((e) => e.type === DAY_ROLLOVER);
+  assert.ok(rollover !== undefined, 'precondition: a non-empty log with a real event');
+  const index = state.log.indexOf(rollover);
 
   const draft = draftOf(state);
-  assert.equal(draft.log[0], state.log[0], 'event objects are intentionally shared');
+  assert.equal(draft.log[index], state.log[index], 'event objects are intentionally shared');
 
   assert.throws(() => {
-    (draft.log[0]!.data as Record<string, unknown>).day = 999;
+    (draft.log[index]!.data as Record<string, unknown>).day = 999;
   }, TypeError, 'a frozen event rejects mutation at runtime');
 
   assert.equal(
-    state.log[0]!.data.day,
+    state.log[index]!.data.day,
     2,
     'the original state is unaffected even when the write is attempted',
   );
@@ -147,14 +165,20 @@ test('state survives a JSON round-trip', () => {
   assert.ok(statesEqual(tick(restored), tick(s)));
 });
 
-test('only tick, log and nextEventId change during an ordinary tick', () => {
+test('only tick, log, nextEventId and job state change during an ordinary tick', () => {
   const s = run(createRun(DEFAULT_SEED), 100);
   const t = tick(s);
   assert.equal(t.seed, s.seed);
-  assert.equal(t.rngCursor, s.rngCursor, 'no draws, so no cursor movement');
+  assert.equal(t.rngCursor, s.rngCursor, 'nothing in the tick draws');
   assert.deepEqual(t.pendingCommands, s.pendingCommands);
-  assert.deepEqual(t.intent, s.intent);
-  assert.equal(t.log.length, s.log.length);
+  assert.deepEqual(t.intent, s.intent, 'no command was issued, so intent is unchanged');
+  assert.deepEqual(
+    t.facilities,
+    s.facilities,
+    'facilities are static at Stage 2 and are not written by the tick',
+  );
+  // Job and personnel state *do* move now — that is the whole point of Stage 2.
+  // What must not move is the clock-independent configuration above.
 });
 
 test('enqueue does not mutate the state it was given', () => {
@@ -176,8 +200,10 @@ test('an unknown command is rejected with a recorded reason, and the queue drain
   const after = tick(queued);
   assert.equal(after.pendingCommands.length, 0, 'queue must be emptied');
 
-  const rejection = after.log[after.log.length - 1]!;
-  assert.equal(rejection.type, 'command_rejected');
+  // The log is no longer a single event per tick, so the rejection is found by
+  // type rather than by position.
+  const rejection = after.log.find((e) => e.type === 'command_rejected');
+  assert.ok(rejection !== undefined, 'the rejection must be recorded, not silent');
   assert.deepEqual(rejection.data.command, 'not_a_real_command');
 });
 
@@ -199,8 +225,13 @@ test('a run of zero ticks changes nothing', () => {
   assert.ok(statesEqual(run(s, 0), s));
 });
 
-test('the rng cursor stays at zero no matter how long the run', () => {
+test('the rng cursor stays at 7 however long the run', () => {
+  // Was "stays at zero": Stage 1 drew nothing at all. Stage 2 draws exactly once
+  // per person when the roster is named, and nothing thereafter — no arrival
+  // jitter was kept (`STAGE2_MASTER_PLAN.md` §5.2). This is the test that keeps
+  // a future system from quietly consuming randomness.
   const s = run(createRun(DEFAULT_SEED), TICKS_PER_DAY * 30);
-  assert.equal(s.rngCursor, 0, 'Stage 1 performs no random draws');
-  assert.equal(s.log.length, 30, '30 days of ticks = 30 boundaries crossed');
+  assert.equal(s.rngCursor, 7, 'only the seven roster draws are ever taken');
+  const rollovers = s.log.filter((e) => e.type === DAY_ROLLOVER);
+  assert.equal(rollovers.length, 30, '30 days of ticks = 30 boundaries crossed');
 });

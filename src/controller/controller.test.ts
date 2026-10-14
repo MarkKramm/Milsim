@@ -19,9 +19,53 @@ test('a fresh controller starts at Day 1, tick 0', () => {
   assert.equal(s.tick, 0);
   assert.equal(s.day, 1);
   assert.equal(s.period, 'Night');
-  assert.equal(s.rngCursor, 0);
+  assert.equal(s.rngCursor, 7, 'the seven roster names are drawn at creation');
   assert.equal(s.seed, DEFAULT_SEED);
   assert.equal(s.logLength, 0);
+  assert.equal(s.priority, 'balanced', 'the documented initial priority');
+  assert.equal(s.roster.length, 7, 'seven people, readable on one phone screen');
+  assert.equal(s.facilities.length, 2);
+});
+
+test('the roster explains every person, including those standing by', () => {
+  // Gate evidence item 1 is "you can explain what happened without reading the
+  // source code". A roster row with an empty reason would quietly fail that.
+  const controller = new Controller({ speed: '1x' });
+  runFrames(controller, 2_000);
+  const { roster } = controller.snapshot();
+  assert.equal(roster.length, 7);
+  for (const entry of roster) {
+    assert.ok(entry.reason.length > 0, `${entry.id} has no reason`);
+    assert.ok(entry.task.length > 0, `${entry.id} has no task label`);
+    if (entry.standby) {
+      assert.equal(entry.task, 'Standby');
+      assert.match(entry.reason, /standing by|at capacity/);
+    } else {
+      assert.ok(entry.progressTicks <= entry.durationTicks);
+    }
+  }
+});
+
+test('facility cards report occupancy and waiting work', () => {
+  const controller = new Controller({ speed: '1x' });
+  runFrames(controller, 5_000);
+  for (const facility of controller.snapshot().facilities) {
+    assert.ok(facility.used <= facility.capacity, `${facility.id} is over capacity`);
+    assert.ok(facility.pending >= 0, `${facility.id} has negative backlog`);
+  }
+});
+
+test('the priority control issues a command rather than writing state', () => {
+  const controller = new Controller({ speed: '1x' });
+  controller.setPriority('meals-first');
+  // Applied at the next tick step 2, not immediately (A4).
+  assert.equal(controller.snapshot().priority, 'balanced', 'not applied until a tick runs');
+  controller.step(125);
+  assert.equal(controller.snapshot().priority, 'meals-first');
+
+  controller.setPriority('nonsense' as never);
+  controller.step(125);
+  assert.equal(controller.snapshot().priority, 'meals-first', 'an unknown value is ignored');
 });
 
 test('one second at 1x advances 8 ticks', () => {
@@ -82,14 +126,22 @@ test('16x advances a day quickly', () => {
 
 test('events this tick is derived from the log, not counted separately', () => {
   const controller = new Controller({ speed: '1x' });
-  runFrames(controller, 8_000);
-  assert.equal(controller.snapshot().eventsThisTick, 0, 'ticks 1-64 cross no boundary');
-  assert.equal(controller.snapshot().logLength, 0);
+  controller.step(1000); // 8 ticks at 1x
 
-  runFrames(controller, 172_000); // up to tick 1440
-  const s = controller.snapshot();
-  assert.equal(s.logLength, 1);
-  assert.equal(s.eventsThisTick, 1, 'exactly one rollover seen in that frame');
+  const before = controller.snapshot().logLength;
+  assert.ok(before > 0, 'Stage 2 logs work events');
+
+  controller.step(1000); // exactly 8 more ticks
+  const after = controller.snapshot();
+
+  // The invariant: the counter is the log's growth across the frame. A separate
+  // tally would drift the moment an event were emitted twice or missed once.
+  assert.equal(
+    after.eventsThisTick,
+    after.logLength - before,
+    'eventsThisTick must equal the growth in the authoritative log',
+  );
+  assert.ok(after.eventsThisTick > 0);
 });
 
 test('a rollover moves the displayed day', () => {
@@ -237,8 +289,15 @@ test('changing speed before the first frame after waking does not discard the id
   );
 });
 
-test('the simulation stays at cursor zero however long it runs', () => {
+test('the simulation draws nothing beyond the roster, however long it runs', () => {
+  // Was "stays at cursor zero". Stage 2 names the roster at creation, which
+  // takes seven draws; arrival jitter was measured and removed, so nothing during
+  // a tick consumes randomness. This is the test that catches a future system
+  // quietly starting to draw.
   const controller = new Controller({ speed: '16x' });
   for (let i = 0; i < 100; i += 1) controller.step(1000);
-  assert.equal(controller.snapshot().rngCursor, 0);
+  assert.equal(controller.snapshot().rngCursor, 7);
+  // 100 frames x 1s at 128 ticks/s. Long enough that any per-tick draw would
+  // have moved the cursor thousands of times.
+  assert.equal(controller.snapshot().tick, 12_800);
 });

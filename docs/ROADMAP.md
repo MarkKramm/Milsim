@@ -147,6 +147,9 @@ simulation by whole ticks, capped at a bounded catch-up per frame.
 
 ## Stage 2 — Autonomous jobs and first intent
 
+*(Built and automated. The **manual** gate — watching Days 4–5 on the phone —
+has not yet been performed; see "What remains unverified" in `CHANGELOG.md`.)*
+
 **Build:**
 - 6–8 personnel with IDs, names, and duties.
 - 3 jobs with eligibility, duration, prerequisites, outputs.
@@ -192,19 +195,47 @@ Fixed starting conditions — deliberately small and reproducible:
 |---|---|---|
 | Personnel | 7: 3 generalists, 2 maintenance-capable, 2 supply-capable | Small enough to read on a phone |
 | Jobs | **Maintenance**, **Meal preparation**, **Standby** | Two competing kinds of work, plus a fallback |
-| Facilities | 1 workshop (capacity 2), 1 kitchen (capacity 2) | Capacity is what creates contention |
+| Facilities | 1 workshop (capacity **4**), 1 kitchen (capacity **4**) | Capacity still bounds a burst; *demand* is now what creates contention |
 | Initial priority | **Balanced** | The neutral baseline both other settings must beat |
 | Duration | Maintenance 90 min, meal 30 min | Long enough to see a job span multiple ticks of visible state |
+| Work arrivals | Maintenance every 24 ticks, meals every 8 ticks, **no jitter** | Our own addition — see the note below |
 
-**The conflict must be real.** With 7 people and 2+2 capacity there is *never*
-labour shortage — so the test needs demand above capacity, not below it. Two
-conditions must hold:
+**Two corrections to this fixture, made at implementation and recorded here.**
+
+*Capacity 2 → 4.* The documented 2+2 could not create the conflict this stage
+tests. Duties outrank player intent in the selection ladder
+(`GAME_DESIGN_BLUEPRINT.md` B3 §3), so two maintenance-capable people exactly
+fill a workshop of 2 and two supply-capable exactly fill a kitchen of 2 — every
+generalist finds every facility full, the player's priority is **never consulted**,
+and the control is inert before a line of code runs. At 4/4 the specialists still
+work their own duty and the generalists genuinely compete for the freed slots.
+This is the "adjust the fixture" path the conditions below already authorise.
+
+*Arrivals are ours.* No document says where work comes from — jobs are specified
+with "eligibility, duration, prerequisites, outputs" and nothing more. Without a
+demand source there is nothing for priority to allocate. The cadence is the
+weakest such addition available: fixed, jitter-free, uniform, no new state and no
+new system. The intervals are derived from the capacity ceilings so that each
+job's demand sits just under its own facility's service ceiling (64/day and
+192/day) while the pair together exceeds the workforce (107% of 10,080
+worker-ticks), which is what makes priority an allocation choice rather than a
+foregone conclusion. **These two numbers are the only lever: change them and
+re-run the gate, and nothing else in the stage depends on them.**
+
+**The conflict must be real.** Two conditions must hold:
 
 1. **Both priority settings change observable behaviour.** Setting
    "Maintenance first" must visibly starve meal preparation on at least one
    in-game day, and "Meals first" must visibly defer maintenance.
 2. **Neither setting is strictly dominant.** If one order wins every day, the
    fixture is broken and must be adjusted before the gate is attempted.
+
+*Measured over five days with the implementation as built:*
+`maintenance-first` finishes with **119 meal orders unstarted** and a clean
+workshop; `meals-first` finishes with **40 maintenance orders unstarted** and a
+clean kitchen; `balanced` sits between at 30/30. Each extreme is worse on a
+different job, so neither dominates. Both job kinds keep being served throughout
+— 777 meals under `maintenance-first`, 257 maintenance under `meals-first`.
 
 **What the interface must show:** for each person, the job they chose *and the
 reason*. A person who picks maintenance while meals go unattended is the whole

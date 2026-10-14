@@ -14,17 +14,17 @@ they are synced, and when each must be updated.
 
 ## Checkpoint
 
-**Last updated:** after Stage 1 was implemented and verified.
+**Last updated:** after Stage 2 was implemented and automated.
 
 | | |
 |---|---|
-| **Phase** | Stage 1 built and verified — a simulation that ticks |
-| **Code** | `src/sim` (pure), `src/controller`, `src/ui`, `tools/headless.ts`, 88 tests |
+| **Phase** | Stage 2 built; **its manual gate is not yet passed** |
+| **Code** | `src/sim` (pure), `src/controller`, `src/ui`, `tools/headless.ts`, **121 tests** |
 | **Git** | Private remote at `github.com/MarkKramm/Milsim`; `docs` and `ci` workflows green |
 | **External review** | Four received, audited, corrections applied |
 | **Blueprint** | Complete — all systems specified, dependencies mapped |
-| **Next action** | Stage 1 manual gate on the phone, then Stage 2 |
-| **Blocked on** | Nothing |
+| **Next action** | Run the **Stage 2 manual gate** on the phone: watch Days 4–5, change the priority, watch the backlog move |
+| **Blocked on** | Nothing technical. The only outstanding item is human observation |
 
 ---
 
@@ -113,16 +113,44 @@ military-base-sim-dev/
   CHANGELOG.md            what changed
 ```
 
-Dependencies are installed and `npm run verify` passes: typecheck, 88 tests,
-production build, and a 1,440-tick headless run. See `CHANGELOG.md` for what
-Stage 1 contains and which decisions were reached while writing it.
+Dependencies are installed and `npm run verify` passes: typecheck, **121
+tests**, production build, and a 1,440-tick headless run. See `CHANGELOG.md` for
+what each stage contains and which decisions were reached while writing it.
+
+> **The Stage 1 phone gate was never performed, and it still has not been.**
+> `docs/reviews/STAGE1_EVIDENCE_AUDIT.md` records it as outstanding. Nothing in
+> the authoritative documents makes it a hard prerequisite for Stage 2, and it
+> was not treated as one — but neither has anyone watched this thing run. Stage 2
+> is likewise unverified *as a game*: its automated gate proves the priority
+> control is not inert, which is not the same as it being interesting.
 
 ---
+
+## What was built: Stage 2
+
+Seven named people work two jobs in two facilities. Every roster row says what
+the person is doing **and why**. One control — Balanced / Maintenance first /
+Meals first — changes which queue the base attacks, and the effect is visible as
+a backlog that moves.
+
+Work arrives on a fixed cadence; jobs are claimed by whoever is free and eligible,
+in id order, following the documented selection ladder. Deferred work persists
+across days. Nothing in the simulation draws randomness except naming the roster.
+
+**Gate to pass before Stage 3:** watch Days 4–5 on the phone, change the priority,
+and understand why the backlog moved. Full protocol in
+`docs/plans/STAGE2_MASTER_PLAN.md` §8.2. At least **3 of 4** evidence items.
+
+Reproduce it without a browser:
+
+```bash
+npm run headless -- --ticks 7200 --priority meals-first
+```
 
 ## What was built: Stage 1
 
 Deliberately trivial. It exists to validate the time model in one evening.
-Everything below is now implemented.
+Everything below is implemented.
 
 - Scaffold Vite + TypeScript + React.
 - `src/sim/`: state shape, tick loop, seeded RNG, fixed tick order.
@@ -135,6 +163,8 @@ Everything below is now implemented.
 **Gate to pass before Stage 2:** you watch the clock advance and the numbers
 move, and you understand them. Nothing more. This is a **technical** gate —
 Stage 1 has no personnel, so it cannot test whether watching them is fun.
+*(Superseded in practice: Stage 2 was built before this was performed. It is
+still outstanding and should be folded into the Stage 2 manual gate.)*
 
 ---
 

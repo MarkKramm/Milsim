@@ -22,7 +22,7 @@ export type Role = 'generalist' | 'maintenance' | 'supply';
 export interface ActiveTask {
   readonly jobId: JobId;
   readonly startedTick: number;
-  progressTicks: number;
+  readonly progressTicks: number;
   /** The literal rule citation — legibility lives here (B3 §9). */
   readonly reason: string;
   /**
@@ -139,21 +139,34 @@ export function buildRoster(draws: readonly number[]): Person[] {
 // Each returns a new Person and leaves its input untouched, so the caller's
 // previous state is never mutated (the same guarantee `draftOf` makes).
 
-export function claimTask(
-  person: Person,
-  task: ActiveTask,
-): Person {
-  return { ...person, currentTask: task };
+/**
+ * Take on a task.
+ *
+ * The `ActiveTask` is frozen on the way in. `draftOf` copies each person with a
+ * shallow spread, so `currentTask` is a **shared nested object** between a
+ * state and its draft — the same aliasing that `events.ts` handles by freezing
+ * events. Without the freeze, a write through a draft would reach back and
+ * rewrite the previous state's task. Nothing does that today (`advanceTask`
+ * builds a new object), but the guarantee should be structural rather than a
+ * convention a future system has to remember. See the audit finding.
+ */
+export function claimTask(person: Person, task: ActiveTask): Person {
+  return { ...person, currentTask: Object.freeze({ ...task }) };
 }
 
 /**
  * Advance the work in hand. Returns the person unchanged when they have no task,
  * so callers can pass every person without checking first.
+ *
+ * The new task is frozen for the same reason `claimTask` freezes its one: the
+ * object replaces a frozen one, and an unfrozen replacement would quietly undo
+ * the protection on the very next tick.
  */
 export function advanceTask(person: Person): Person {
   if (person.currentTask === null) return person;
   const task = person.currentTask;
-  return { ...person, currentTask: { ...task, progressTicks: task.progressTicks + 1 } };
+  const advanced = Object.freeze({ ...task, progressTicks: task.progressTicks + 1 });
+  return { ...person, currentTask: advanced };
 }
 
 /**

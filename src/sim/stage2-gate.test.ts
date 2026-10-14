@@ -23,7 +23,7 @@ import { test } from 'node:test';
 
 import { createRun, draftOf } from './state';
 import type { SimState } from './state';
-import { run } from './tick';
+import { run, standbyReason } from './tick';
 import { enqueue } from './commands';
 import { causalReferencesAreValid } from './events';
 import { FACILITIES } from './facilities';
@@ -398,4 +398,63 @@ test('the seed changes names but not outcomes', () => {
   const names = (seed: number): string[] => createRun(seed).personnel.map((p) => p.name);
   assert.notDeepEqual(names(DEFAULT_SEED), names(4242), 'rosters should differ by seed');
   assert.deepEqual(simulate('balanced', DEFAULT_SEED), simulate('balanced', 4242));
+});
+// ── Regression tests added by the Stage 2 final audit ────────────────────────
+
+test('a draft cannot write back into the state it was made from', () => {
+  // Defect found in audit. `draftOf` copies each person with a shallow spread,
+  // so `currentTask` is a shared nested object between a state and its draft.
+  // The Stage 1 audit had already found this class of bug for `log` entries and
+  // fixed it by freezing events; Stage 2 added `ActiveTask` and did not repeat
+  // the protection. A write through a draft reached back and changed the previous
+  // state's task (progressTicks became 9999).
+  //
+  // Nothing in Stage 2 mutates a task in place — `advanceTask` builds a new
+  // object — so this was latent rather than active. The freeze makes it
+  // structural instead of a convention a future system has to remember.
+  const original = run(createRun(DEFAULT_SEED), 200);
+  const draft = draftOf(original);
+
+  const before = original.personnel[0]?.currentTask;
+  assert.notEqual(before, null, 'precondition: someone is holding a task');
+  const shared = draft.personnel[0]?.currentTask;
+  assert.equal(shared, before, 'the object is shared — that is what makes this risky');
+
+  assert.throws(
+    () => {
+      (shared as { progressTicks: number }).progressTicks = 9999;
+    },
+    TypeError,
+    'a task in hand rejects mutation at runtime',
+  );
+  assert.notEqual(original.personnel[0]?.currentTask?.progressTicks, 9999);
+});
+
+test('an idle worker is never told there is nothing to do when work is waiting', () => {
+  // Second defect found in audit. A person who finishes a task in the progress
+  // pass is idle until the *next* tick's selection pass, so work is frequently
+  // claimable right then. The old wording said "nothing claimable — standing by"
+  // in that case, which is simply false: over a five-day run it mislabelled
+  // 1,098 of 1,315 idle person-ticks, making it the most common line on screen.
+  //
+  // The roster is the legibility gate (evidence item 1). A reason that lies is
+  // worse than no reason.
+  let state = enqueue(createRun(DEFAULT_SEED), {
+    type: 'set_priority',
+    value: 'meals-first',
+  });
+  let misleading = 0;
+
+  for (let i = 0; i < 1440; i += 1) {
+    state = run(state, 1);
+    const workWaiting = state.jobs.some((job) => job.pending > 0);
+    for (const person of state.personnel) {
+      if (person.currentTask !== null) continue;
+      const reason = standbyReason(person, state.jobs, state.facilities, state.personnel);
+      assert.notEqual(reason, 'nothing claimable — standing by', 'stale wording is gone');
+      if (workWaiting && reason.includes('no work waiting')) misleading += 1;
+    }
+  }
+
+  assert.equal(misleading, 0, 'never claim there is no work while work is waiting');
 });

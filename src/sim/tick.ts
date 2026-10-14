@@ -246,9 +246,18 @@ function advanceWork(draft: SimState): void {
  * Why an idle person is standing by, for the roster.
  *
  * Derived on read and never stored — the same rule that keeps `readiness` out of
- * state (invariant 12's spirit). A worker idle because their facility is full is
- * showing a different fact from one with nothing to do, and collapsing the two
- * would hide the most interesting queue pressure in the game.
+ * state (invariant 12's spirit).
+ *
+ * Three distinct situations, and conflating them was a real defect: a person who
+ * has just finished a task is idle only until the *next* tick's selection pass,
+ * so their work may well be claimable right now. Reporting "nothing claimable"
+ * for that is simply false — measured over five days it mislabelled 83% of idle
+ * person-ticks — and a roster that lies is the opposite of what this stage is
+ * for. An audit of the reference run found the misleading line was the single
+ * most common reason the roster displayed.
+ *
+ * @param jobs `pending` is *unclaimed* work, so anything above zero means real
+ *             work is waiting somewhere.
  */
 export function standbyReason(
   person: Person,
@@ -256,17 +265,31 @@ export function standbyReason(
   facilities: readonly Facility[],
   personnel: readonly Person[],
 ): string {
-  const blocked = jobs.find(
+  const eligible = jobs.filter((job) => isEligible(job, person.role));
+
+  // Capacity is the only reason an eligible worker cannot start despite work
+  // waiting. Report the facility, because "why is nobody on meals?" is answered
+  // by the kitchen being full, not by the worker.
+  const blocked = eligible.find(
     (job) =>
       job.pending > 0 &&
-      isEligible(job, person.role) &&
       !hasFreeCapacity(facilityById(facilities, job.facilityId), personnel),
   );
-  if (blocked === undefined) return 'nothing claimable — standing by';
+  if (blocked !== undefined) {
+    const facility = facilityById(facilities, blocked.facilityId);
+    const used = occupancy(facility, personnel);
+    return `${facility.label} is at capacity ${used}/${facility.capacity}`;
+  }
 
-  const facility = facilityById(facilities, blocked.facilityId);
-  const used = occupancy(facility, personnel);
-  return `${facility.label} is at capacity ${used}/${facility.capacity}`;
+  // Work is waiting and there is room, so this person is idle only because
+  // selection has not run since their last task ended. Saying so is honest and
+  // is the truth of the phase order: progress (phase 5) releases a task, and the
+  // next selection pass (also phase 5, next tick) hands out new work.
+  if (jobs.some((job) => job.pending > 0)) {
+    return 'finished a task — picking work up next tick';
+  }
+
+  return 'no work waiting — standing by';
 }
 
 /** How many of a facility's slots are in use right now. Derived, never stored. */

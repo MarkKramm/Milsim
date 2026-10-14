@@ -14,17 +14,31 @@ they are synced, and when each must be updated.
 
 ## Checkpoint
 
-**Last updated:** after Stage 2 was implemented and automated.
+**Last updated:** after Stage 3 was implemented.
 
 | | |
 |---|---|
-| **Phase** | Stage 2 built; **its manual gate is not yet passed** |
-| **Code** | `src/sim` (pure), `src/controller`, `src/ui`, `tools/headless.ts`, **121 tests** |
+| **Phase** | Stage 3 built; **its manual gate is not yet passed** |
+| **Code** | `src/sim` (pure), `src/controller`, `src/ui`, `tools/headless.ts`, **128 tests** |
 | **Git** | Private remote at `github.com/MarkKramm/Milsim`; `docs` and `ci` workflows green |
-| **External review** | Four received, audited, corrections applied |
-| **Blueprint** | Complete — all systems specified, dependencies mapped |
-| **Next action** | Run the **Stage 2 manual gate** on the phone: watch Days 4–5, change the priority, watch the backlog move |
-| **Blocked on** | Nothing technical. The only outstanding item is human observation |
+| **Next action** | Run the **Stage 3 phone gate**: does a base that rests, starves and recovers from a bad call hold attention better than one that works nonstop? |
+| **Blocked on** | Nothing technical. The outstanding item is human observation |
+
+**What is built:** seven people who work, rest, get hungry and get tired; a
+larder that can empty; a workshop that can fall behind; one priority control and
+one larder target. See `CHANGELOG.md` for what changed and why.
+
+**Three manual gates are outstanding** — Stage 1's phone check, the Stage 2
+Day 4–5 check, and Stage 3's phone check. None has been performed, and no
+automated test substitutes for any of them. The Stage 1 audit's finding stands:
+a green suite establishes that the tests it contains pass, not that the game is
+worth playing.
+
+Reproduce Stage 3 without a browser:
+
+```bash
+npm run headless -- --ticks 7200 --priority maintenance-first
+```
 
 ---
 
@@ -125,6 +139,23 @@ what each stage contains and which decisions were reached while writing it.
 > control is not inert, which is not the same as it being interesting.
 
 ---
+
+## What was built: Stage 3
+
+Hunger and fatigue in [0,1], both changing on a timescale of hours. Rest is
+needs-driven: a tired worker stops claiming work until they have slept, and
+cannot work while resting. Eating is an instant action that happens before
+selection — deliberately *not* gated on being idle, because the first measurement
+showed a base starving beside a full larder purely because nobody stopped
+working.
+
+The larder is real. The kitchen cooks while food is below the player's target —
+a threshold, never a cap, so valid stock is never deleted. Maintenance consumes
+supplies; without them a repair takes twice as long but still finishes, and says
+so. Readiness is derived in the controller and stored nowhere.
+
+**Gate to pass before Stage 4:** on the phone, does a base that rests, starves
+and recovers from a bad call hold attention better than one that works nonstop?
 
 ## What was built: Stage 2
 

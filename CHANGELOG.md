@@ -8,6 +8,132 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions follow
 
 ## [Unreleased]
 
+## [0.3.0] — Stage 3: needs, rest, food, and consequence
+
+The base now has a day. People get hungry, get tired, stop working and sleep,
+and eat when there is anything to eat. There is a larder, it can empty, and the
+effect of that is traceable back to why.
+
+Exit gate: **not yet passed.** The automated half is green; the manual
+observation — that this is more interesting than nonstop work — needs a human.
+
+### Added
+
+**Simulation (`src/sim/`, still pure)**
+
+- `needs.ts` — hunger and fatigue in [0,1], rest, eating, and the refusal
+  ceiling. Two needs, because a third behaving like the first two would be a
+  meter without a consequence.
+- `storage.ts` — **bulk** food and maintenance supplies, and the only writer of
+  them. Not Stage 7: that is individual items, condition and loadouts, and D21
+  is untouched.
+- `resources.ts` — the consumption and production *rules*. No state, by design.
+- `delivery.ts` — supplies on a 1,200-tick schedule, phase 2.
+- `readiness.ts` — derived summary, computed in the controller and stored
+  nowhere, so no system can read it (invariant 12).
+- `tick.ts` gained phases 2 (delivery), 3 (resources), 4 (needs) and 9 (derived),
+  plus selection rule 2 — recovery, which outranks duty.
+
+**Interface** — need bars per person, a resting state, an exhausted marker, base
+readiness with its causes, the larder with its target, and a target control.
+
+**Headless** — `npm run headless -- --ticks 7200 --priority <setting>` prints the
+roster with hunger and fatigue, the stock, and readiness.
+
+### Two document conflicts, resolved
+
+1. **`SYSTEM_DEPENDENCIES.md` put `storage[]` at Stage 7 while `resources` — a
+   derived aggregate over storage — sat at Stage 3.** Resources would have derived
+   from a system that did not exist, and `ROADMAP.md` §Stage 3 requires food
+   consumption and resource contention. A **minimal bulk Storage** was brought
+   forward. **This does not move Stage 7** — bulk food counts and individual
+   weapons are different systems. D21 remains guaranteed.
+2. **`persons[].schedule` was listed at Stage 2; the blueprint puts schedules at
+   Stage 3.** Stage 2 correctly shipped none. The calendar is now explicitly
+   **deferred to Stage 5**; needs-driven rest delivers the rest part at Stage 3,
+   and a rhythm emerges from the workforce's condition rather than a rota.
+
+### A contradiction in the plan, resolved narrowly
+
+The plan's Step 5 said a maintenance job "still completes the work" without
+supplies, while the roadmap requires scarcity to *change outcomes*. Completing at
+normal speed makes supplies decorative; blocking the job makes the base dead
+until the next delivery and turns a shortage into a cliff.
+
+**A shortage is therefore a cost, not a gate:** an unsupplied repair takes twice
+as long, still finishes, and records a `supplies_short` event saying why. Work is
+never permanently blocked and supplies are never pointless.
+
+### Stage 2 reference figures — superseded
+
+Stage 3 replaces fixed meal arrivals with need-driven production and adds a
+fatigue ceiling, so **Stage 2's figures no longer hold.** They were not preserved
+by weakening anything; the Stage 2 gate was rewritten as `stage3-gate.test.ts`
+and re-measured from the implementation.
+
+| Setting | Stage 2 (superseded) | Stage 3 |
+|---|---|---|
+| Balanced | 267 / 866, backlog 30 / 30 | 194 / 478, backlog 164 / 60, **food 0** |
+| Maintenance-first | 297 / 777, backlog 0 / 119 | 192 / 487, backlog 168 / 60, **food 0** |
+| Meals-first | 257 / 896, backlog 40 / 0 | 170 / 585, backlog 190 / 3, **food 57** |
+
+The *shape* of the gate is unchanged — absolute floors, directional ordering,
+non-dominance, a causal reason histogram — because that shape is what caught the
+Stage 2 problems. Non-dominance still holds, in a different currency: **neither
+setting is better.** Maintenance-first starves people (food 0, six of seven
+hungry); meals-first keeps everyone fed and lets the workshop rot (backlog 190).
+
+Recovery was verified: running maintenance-first for three days drains the larder
+to 10, and switching to meals-first recovers it to 57 by day 5. A player can undo
+a bad call — `OPEN_QUESTIONS.md` Q18.
+
+### The immutable-state rule
+
+The Stage 2 audit's follow-up proved `history` and its `TaskRecord` entries were
+shared and mutable — a push through a draft lengthened the original's history,
+and an entry write changed its `tick`. `ActiveTask` had been frozen in Stage 2;
+the same rule now covers history, needs and storage, and is written into
+`draftOf` rather than left as a convention:
+
+> Everything reachable inside `SimState` is either frozen at creation or rebuilt
+> immutably on every write. No object or array placed in state is ever mutated in
+> place.
+
+Three separate defects have now come from breaking it, which is why it is stated.
+
+### Architecture guards
+
+- Only `personnel.ts` may construct a person field; only `storage.ts` may declare
+  storage holdings.
+- No runtime import cycle among `src/sim` modules.
+
+Both were requested by the audit. The ownership guard is deliberately narrow: an
+earlier attempt matched `conditionOf(needs: Needs)`, a *parameter*, and another
+matched an event payload's `supplies:` key. Three false positives is enough to
+know grep cannot do this job, so the guard checks only what is genuinely
+checkable and the state-isolation tests prove the property that matters.
+
+### Two runaway loops found by measuring, not by reading
+
+Both would have been invisible in review and would have looked like "slow tests".
+
+- **Meal orders queued one per tick** produced a **4,106-deep queue** and 4,593
+  events over five days. The order book is now *the shortfall*, so it cannot
+  outgrow the gap it exists to close.
+- **An empty larder emitted `no_food_available` every tick** for every hungry
+  person — hundreds of thousands of log entries, which was what wedged the test
+  runner. It is now reported once per hunger cycle. A five-day log is 2,707 events.
+
+### Still to verify by hand
+
+- **The Stage 1 phone gate** — never performed.
+- **The Stage 2 Day 4–5 gate** — never performed.
+- **The Stage 3 phone gate** — never performed. This is the one that matters:
+  the question is whether watching a base rest, go hungry and recover from a bad
+  call is more interesting than watching it work nonstop. Automated tests cannot
+  answer it.
+- Roster and need bars at phone width.
+
 ## [0.2.0] — Stage 2: autonomous jobs and first intent
 
 The base now has people who work, a reason you can read for every assignment, and

@@ -254,6 +254,10 @@ nothing later will rescue the project, so it is worth playing honestly.
 
 ## Stage 3 — Needs and consequence
 
+*(Implemented. The **manual** gate — watching it on the phone and judging whether
+a base that rests and starves is more interesting than one that works nonstop —
+has not been performed. See "What remains unverified" in `CHANGELOG.md`.)*
+
 **Build:**
 - Hunger and fatigue (hydration and morale come later).
 - Food consumption and one maintenance-supply interaction.

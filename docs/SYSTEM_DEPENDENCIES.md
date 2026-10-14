@@ -92,10 +92,10 @@ has assumed authority it does not have.
 | `intent[]` | Player intent | read | 1 |
 | `persons[].identity`, `.role`, `.specialties`, `.history` | Personnel | read | 2 |
 | `persons[].currentTask`, `.taskProgress`, `.location` | Personnel | request | 2 |
-| `persons[].schedule` | Personnel | read, request | 2 |
+| `persons[].schedule` | Personnel | read, request | 5 (calendar deferred; rest is needs-driven at 3) |
 | `facilities[]`, `.capacity`, `.availability` | Facilities | request | 2 |
 | `items[]`, `.condition`, `.wear`, `.reliability`, `.assignedTo` | Items | request | 7 |
-| `storage[].holdings`, `.location`, `.capacity` | Storage | request | 7 |
+| `storage[].holdings`, `.location`, `.capacity` | Storage | request | 3 (bulk; items still 7) |
 | `resources` *(aggregate)* | **Derived by Resources from Storage** | read | 3 |
 | `persons[].needs` — hunger, fatigue, hydration | Needs | request | 3 |
 | `persons[].morale` | **Derived by Needs** | read | 6 |

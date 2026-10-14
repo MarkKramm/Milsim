@@ -14,11 +14,13 @@ import { realpathSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 import { createRun } from '../src/sim/state';
-import { enqueue } from '../src/sim/commands';
+import { enqueue, readFoodTarget } from '../src/sim/commands';
 import { run, standbyReason } from '../src/sim/tick';
 import { countByTier } from '../src/sim/events';
 import { DEFAULT_SEED } from '../src/sim/rng';
 import { DEFAULT_PRIORITY, PRIORITIES, isPriority, readPriority } from '../src/sim/priority';
+import { baseReadiness, readinessCauses } from '../src/sim/readiness';
+import { isResting } from '../src/sim/needs';
 import type { Priority } from '../src/sim/priority';
 import { dayOf, periodOf, TICKS_PER_DAY } from '../src/sim/time';
 
@@ -118,6 +120,9 @@ export interface HeadlessPerson {
   task: string;
   reason: string;
   progressTicks: number;
+  hunger: number | null;
+  fatigue: number | null;
+  resting: boolean;
 }
 
 /** Per-job totals, so a headless run can be compared across priority settings. */
@@ -142,6 +147,12 @@ export interface HeadlessSummary {
   priority: string;
   personnel: HeadlessPerson[];
   jobs: HeadlessJob[];
+  /** Stage 3 — stock, the player's target, and the derived readiness summary. */
+  food: number;
+  supplies: number;
+  foodTarget: number;
+  readiness: number;
+  readinessCauses: string[];
 }
 
 /**
@@ -197,12 +208,20 @@ export function runHeadless(options: HeadlessOptions): HeadlessSummary {
     eventsByTier: countByTier(state.log),
     digest: digestOf(state.log),
     priority: readPriority(state.intent),
+    food: state.storage.food,
+    supplies: state.storage.supplies,
+    foodTarget: readFoodTarget(state),
+    readiness: baseReadiness(state.personnel),
+    readinessCauses: readinessCauses(state.personnel),
     personnel: state.personnel.map((person) => {
       const task = person.currentTask;
+      const resting = isResting(person, state.tick);
       const label =
-        task === null
-          ? 'Standby'
-          : (state.jobs.find((job) => job.id === task.jobId)?.label ?? task.jobId);
+        resting
+          ? 'Resting'
+          : task === null
+            ? 'Standby'
+            : (state.jobs.find((job) => job.id === task.jobId)?.label ?? task.jobId);
       const duration = task === null
         ? 0
         : (state.jobs.find((job) => job.id === task.jobId)?.durationTicks ?? 0);
@@ -211,8 +230,15 @@ export function runHeadless(options: HeadlessOptions): HeadlessSummary {
         name: person.name,
         role: person.role,
         task: label,
-        reason: task === null ? standbyReason(person, state.jobs, state.facilities, state.personnel) : task.reason,
+        reason: resting
+          ? 'recovering — not available for work'
+          : task === null
+            ? standbyReason(person, state.jobs, state.facilities, state.personnel, state.tick)
+            : task.reason,
         progressTicks: task === null ? 0 : Math.round((task.progressTicks / Math.max(1, duration)) * 100),
+        hunger: resting ? null : person.needs.hunger,
+        fatigue: resting ? null : person.needs.fatigue,
+        resting,
       };
     }),
     jobs: state.jobs.map((job) => ({
@@ -237,6 +263,10 @@ export function formatSummary(s: HeadlessSummary): string {
     `priority      ${s.priority}`,
     `digest        ${s.digest}`,
     '',
+    `food          ${s.food}  (target ${s.foodTarget})`,
+    `supplies      ${s.supplies}`,
+    `readiness     ${s.readiness.toFixed(2)}  — ${s.readinessCauses.join(', ')}`,
+    '',
     'jobs          completed  pending  capacity',
   ];
   for (const job of s.jobs) {
@@ -244,10 +274,12 @@ export function formatSummary(s: HeadlessSummary): string {
       `  ${job.id.padEnd(12)}${String(job.completed).padStart(9)}${String(job.pending).padStart(9)}${String(job.capacity).padStart(10)}`,
     );
   }
-  lines.push('', 'roster        name       role          task                progress  reason');
+  lines.push('', 'roster        name       role          task                progress  hunger  fatigue  reason');
   for (const person of s.personnel) {
+    const bar = (value: number | null): string =>
+      value === null ? '   rest' : value.toFixed(2).padStart(6);
     lines.push(
-      `  ${person.id.padEnd(12)}${person.name.padEnd(11)}${person.role.padEnd(14)}${person.task.padEnd(20)}${String(person.progressTicks).padStart(6)}%  ${person.reason}`,
+      `  ${person.id.padEnd(12)}${person.name.padEnd(11)}${person.role.padEnd(14)}${person.task.padEnd(20)}${String(person.progressTicks).padStart(6)}%${bar(person.hunger)}${bar(person.fatigue)}  ${person.reason}`,
     );
   }
   return lines.join('\n');

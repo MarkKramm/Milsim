@@ -197,3 +197,43 @@ h3 {
   color: var(--muted);
   font-weight: 400;
 }
+
+.roster li.resting {
+  border-color: #2c3550;
+  background: #171c28;
+}
+
+.roster li .warn {
+  color: #ffb454;
+}
+
+.bars {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.3rem;
+  font-size: 0.72rem;
+}
+
+.bar {
+  display: inline-block;
+  width: 4rem;
+  height: 0.3rem;
+  background: #262b36;
+  border-radius: 0.15rem;
+  overflow: hidden;
+}
+
+.bar .fill {
+  display: block;
+  height: 100%;
+}
+
+.bar .fill.hunger { background: #4a9eff; }
+.bar .fill.fatigue { background: #b07cff; }
+.bar .fill.sleep { background: #4a6b52; }
+
+.roster li.resting .who,
+.roster li.resting .what {
+  color: #8fb89a;
+}

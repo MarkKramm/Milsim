@@ -126,22 +126,25 @@ test('16x advances a day quickly', () => {
 
 test('events this tick is derived from the log, not counted separately', () => {
   const controller = new Controller({ speed: '1x' });
-  controller.step(1000); // 8 ticks at 1x
 
-  const before = controller.snapshot().logLength;
-  assert.ok(before > 0, 'Stage 2 logs work events');
+  // The invariant is the equality below, and it must hold even when a frame
+  // produces nothing. Ticks 1-16 genuinely produce no events: the first
+  // maintenance order arrives at tick 20 and the larder starts at its target,
+  // so an early frame logging nothing is correct rather than a broken counter.
+  for (let frame = 0; frame < 5; frame += 1) {
+    const before = controller.snapshot().logLength;
+    controller.step(1000); // 8 ticks at 1×
+    const after = controller.snapshot();
+    assert.equal(
+      after.eventsThisTick,
+      after.logLength - before,
+      'eventsThisTick must equal the growth in the authoritative log',
+    );
+  }
 
-  controller.step(1000); // exactly 8 more ticks
-  const after = controller.snapshot();
-
-  // The invariant: the counter is the log's growth across the frame. A separate
-  // tally would drift the moment an event were emitted twice or missed once.
-  assert.equal(
-    after.eventsThisTick,
-    after.logLength - before,
-    'eventsThisTick must equal the growth in the authoritative log',
-  );
-  assert.ok(after.eventsThisTick > 0);
+  // Over a longer stretch the base is plainly doing something.
+  const total = controller.snapshot().logLength;
+  assert.ok(total > 0, `expected work events after 40 ticks, got ${total}`);
 });
 
 test('a rollover moves the displayed day', () => {

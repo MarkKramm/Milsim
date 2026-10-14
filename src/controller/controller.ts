@@ -20,11 +20,14 @@ import { DEFAULT_SEED } from '../sim/rng';
 import { enqueue } from '../sim/commands';
 import type { Command } from '../sim/commands';
 import { readPriority, isPriority } from '../sim/priority';
+import { readFoodTarget } from '../sim/commands';
+import { baseReadiness, readinessCauses } from '../sim/readiness';
+import { isResting, isTooExhaustedToWork } from '../sim/needs';
 import type { Priority } from '../sim/priority';
 import { MAX_TICKS_PER_FRAME, SPEEDS, advance, owedTicksAt } from './timeline';
 import type { SpeedName } from './timeline';
 
-/** One roster row: who, what, and why. All derived, none stored. */
+/** One roster row: who, what, why, and how they are doing. */
 export interface RosterEntry {
   id: string;
   name: string;
@@ -34,6 +37,11 @@ export interface RosterEntry {
   progressTicks: number;
   durationTicks: number;
   standby: boolean;
+  /** Stage 3 — [0,1] each. `null` while resting, which is a state, not a value. */
+  hunger: number | null;
+  fatigue: number | null;
+  resting: boolean;
+  exhausted: boolean;
 }
 
 /** One facility card: how full it is, and how much work is waiting. */
@@ -65,6 +73,20 @@ export interface Snapshot {
   facilities: FacilityEntry[];
   /** Counts by type, so the player can see what the base has been doing. */
   completedToday: Record<string, number>;
+  /** Stage 3 — bulk stock and the player's food target. */
+  food: number;
+  supplies: number;
+  foodTarget: number;
+  /**
+   * Stage 3 — an explanatory summary only.
+   *
+   * Computed here, in the controller, which is the UI layer. It is never stored
+   * in `SimState` and never read by a simulation system (invariant 12,
+   * `LOCKED_DECISIONS.md` D1 correction 3). Computing it in the one layer that is
+   * allowed to read it is what makes that structural rather than a promise.
+   */
+  readiness: number;
+  readinessCauses: string[];
 }
 
 export interface ControllerOptions {
@@ -145,6 +167,11 @@ export class Controller {
       speed: this.speed,
       backlogTicks: this.backlogTicks,
       priority: readPriority(this.state.intent),
+      food: this.state.storage.food,
+      supplies: this.state.storage.supplies,
+      foodTarget: readFoodTarget(this.state),
+      readiness: baseReadiness(this.state.personnel),
+      readinessCauses: readinessCauses(this.state.personnel),
       roster: this.roster(),
       facilities: this.state.facilities.map((facility) => ({
         id: facility.id,
@@ -193,21 +220,46 @@ export class Controller {
         task === null
           ? undefined
           : this.state.jobs.find((candidate) => candidate.id === task.jobId);
+      const resting = isResting(person, this.state.tick);
 
       return {
         id: person.id,
         name: person.name,
         role: person.role,
-        task: job?.label ?? 'Standby',
-        reason:
-          task === null
-            ? standbyReason(person, this.state.jobs, this.state.facilities, this.state.personnel)
+        task: resting ? 'Resting' : (job?.label ?? 'Standby'),
+        reason: resting
+          ? 'recovering — not available for work'
+          : task === null
+            ? standbyReason(
+                person,
+                this.state.jobs,
+                this.state.facilities,
+                this.state.personnel,
+                this.state.tick,
+              )
             : task.reason,
         progressTicks: task?.progressTicks ?? 0,
         durationTicks: job?.durationTicks ?? 0,
-        standby: task === null,
+        standby: task === null && !resting,
+        // Resting is a state, not a low number: showing a half-rested fatigue
+        // while they are asleep would be a small lie on the most-watched row.
+        hunger: resting ? null : person.needs.hunger,
+        fatigue: resting ? null : person.needs.fatigue,
+        resting,
+        exhausted: !resting && isTooExhaustedToWork(person),
       };
     });
+  }
+
+  /**
+   * Set the kitchen's target stock — Stage 3's player-set goal.
+   *
+   * Issued as a command, so it lands at the next tick like every other player
+   * action. The report that would *track* the goal is Stage 4.
+   */
+  setFoodTarget(target: number): void {
+    if (!Number.isInteger(target)) return;
+    this.issue({ type: 'set_food_target', value: target });
   }
 
   /**

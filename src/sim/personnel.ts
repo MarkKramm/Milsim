@@ -33,6 +33,28 @@ export interface ActiveTask {
   readonly startedEventId: number;
 }
 
+/**
+ * Hunger and fatigue, each in [0, 1] (`GAME_DESIGN_BLUEPRINT.md` B4 §2).
+ *
+ * Needs is a **value**, not a store: it belongs to a person and is replaced
+ * wholesale by `needs.ts`. Hydration, morale and injuries are Stage 6 (B4 §11).
+ *
+ * Frozen like everything else reachable from state — see the immutability rule
+ * in `draftOf` and the audit finding behind it.
+ */
+export interface Needs {
+  readonly hunger: number;
+  readonly fatigue: number;
+}
+
+/** Fresh, unfed, unrested. The run starts at Day 1 00:00 (Night). */
+export const INITIAL_NEEDS: Needs = Object.freeze({ hunger: 0.1, fatigue: 0.1 });
+
+/** Build a fresh needs pair. Frozen on the way out, like every stored value. */
+export function createNeeds(hunger: number, fatigue: number): Needs {
+  return Object.freeze({ hunger, fatigue });
+}
+
 export interface TaskRecord {
   readonly tick: number;
   readonly jobId: JobId;
@@ -44,7 +66,16 @@ export interface Person {
   readonly name: string;
   readonly role: Role;
   currentTask: ActiveTask | null;
-  readonly history: TaskRecord[];
+  readonly history: readonly TaskRecord[];
+  /** Stage 3. Written by Needs through the functions below, never in place. */
+  readonly needs: Needs;
+  /**
+   * Stage 3, needs-driven rest. Non-null means the person is resting and no job
+   * may claim them until this tick (`GAME_DESIGN_BLUEPRINT.md` B3 §3 rule 2).
+   * A rest is a duration rather than a queued work order, which is why it is
+   * not a third `JobId`.
+   */
+  readonly restUntilTick: number | null;
 }
 
 /** History depth is a Stage 4/6 concern (B1 §11); a short recent record is enough. */
@@ -113,9 +144,22 @@ export function assignNames(draws: readonly number[]): string[] {
   });
 }
 
-/** Build a person with no task. History is never null — it is an empty list. */
+/**
+ * Build a person with no task. History is never null — it is an empty list.
+ *
+ * `history` is frozen empty, matching the rule that everything reachable from
+ * `SimState` is frozen at creation.
+ */
 export function createPerson(id: string, name: string, role: Role): Person {
-  return { id, name, role, currentTask: null, history: [] };
+  return {
+    id,
+    name,
+    role,
+    currentTask: null,
+    history: Object.freeze<readonly TaskRecord[]>([]),
+    needs: INITIAL_NEEDS,
+    restUntilTick: null,
+  };
 }
 
 /**
@@ -181,14 +225,35 @@ export function advanceTask(person: Person): Person {
  */
 export function completeTask(person: Person, tick: number): Person {
   if (person.currentTask === null) return person;
-  const record: TaskRecord = {
+  const record: TaskRecord = Object.freeze({
     tick,
     jobId: person.currentTask.jobId,
     outcome: 'completed',
-  };
+  });
   return {
     ...person,
     currentTask: null,
-    history: [...person.history, record].slice(-HISTORY_LIMIT),
+    // Both the entries and the array are frozen. `draftOf` copies a person with a
+    // shallow spread, so `history` was a shared mutable array reachable from any
+    // earlier state: a push through a draft lengthened the original's history and
+    // a write to an entry rewrote its `tick`. Found by the Stage 2 audit's
+    // follow-up; the fix extends the treatment `Event` already had in `events.ts`.
+    history: Object.freeze([...person.history, record].slice(-HISTORY_LIMIT)),
   };
+}
+
+// ── Stage 3: Needs writes condition and rest ─────────────────────────────────
+// Same request pattern: Needs asks, Personnel is the only place a person field is
+// constructed, and the previous person is never mutated.
+
+export function setNeeds(person: Person, needs: Needs): Person {
+  return { ...person, needs };
+}
+
+export function beginRest(person: Person, untilTick: number): Person {
+  return { ...person, restUntilTick: untilTick };
+}
+
+export function endRest(person: Person): Person {
+  return { ...person, restUntilTick: null };
 }

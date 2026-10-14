@@ -29,9 +29,13 @@ import type { Intent } from './intent';
 import type { Person } from './personnel';
 import type { Job } from './jobs';
 import type { Facility } from './facilities';
+import type { Storage } from './storage';
+import type { DeliveryState } from './delivery';
 import { FIXTURE_ROLES, buildRoster } from './personnel';
 import { createJobs } from './jobs';
 import { FACILITIES } from './facilities';
+import { INITIAL_STORAGE } from './storage';
+import { createDelivery } from './delivery';
 import { rand } from './rng';
 
 export interface SimState {
@@ -55,6 +59,14 @@ export interface SimState {
   jobs: Job[];
   /** Stage 2 — Facilities owns capacity. Written by Facilities alone. */
   facilities: Facility[];
+  /**
+   * Stage 3 — bulk stock. Storage owns it and nothing else may write it
+   * (invariant 17). **Not** Stage 7's individual items, which are a different
+   * system and remain guaranteed by D21.
+   */
+  storage: Storage;
+  /** Stage 3 — the supply delivery schedule. */
+  delivery: DeliveryState;
 }
 
 /**
@@ -81,6 +93,8 @@ export function createRun(seed: number): SimState {
     personnel: [],
     jobs: createJobs(),
     facilities: FACILITIES.map((facility) => ({ ...facility })),
+    storage: INITIAL_STORAGE,
+    delivery: createDelivery(),
   };
 
   // Names come from the seeded stream and nowhere else (B1 §3). Drawing through
@@ -96,16 +110,32 @@ export function createRun(seed: number): SimState {
 /**
  * Copy a state into a fresh object to be mutated inside a tick.
  *
- * Arrays are copied rather than shared, so appends cannot reach back into the
- * caller's state. Event *objects* inside `log` are deliberately shared rather than
- * cloned — cloning an ever-growing log on every tick would be quadratic for no
- * benefit, since an appended event is never changed again.
+ * ── The immutability rule ──
  *
- * That makes the guarantee slightly narrower than "shares no mutable structure",
- * and it is stated precisely here: **the input and the output share no mutable
- * structure at the top level.** Nested event objects are shared, and are safe
- * because `Event` is `readonly` and frozen at creation (`events.ts`), so neither a
- * type error nor a runtime write can change one.
+ * > Everything reachable inside `SimState` is either frozen at creation or
+ * > rebuilt immutably on every write. No object or array placed in state is ever
+ * > mutated in place.
+ *
+ * This copy is therefore only *shallow*, and the rule is what makes a shallow
+ * copy safe. Three separate defects have been found by breaking it, which is why
+ * it is written down rather than left as a convention:
+ *
+ * - **Event objects.** Shared by a state and its draft on purpose, safe only
+ *   because `emit()` freezes each one (`events.ts`). Found by the Stage 1 audit.
+ * - **`persons[].currentTask`.** Shared and mutable. Stage 2 added the field
+ *   without repeating the freeze; a write through a draft changed the earlier
+ *   state's task. Fixed by freezing in `claimTask` and `advanceTask`.
+ * - **`persons[].history`.** Shared array, unfrozen entries. The Stage 2 audit's
+ *   follow-up proved a `push` through a draft lengthened the original's history
+ *   and an entry write changed its `tick`. Fixed by freezing both in
+ *   `completeTask`.
+ *
+ * Stage 3 adds `persons[].needs` and `storage`, both frozen for the same reason.
+ * If you add a field, freeze it here or where it is built.
+ *
+ * Event *objects* inside `log` are still deliberately shared rather than cloned:
+ * cloning an ever-growing log on every tick would be quadratic for no benefit,
+ * since an appended event is never changed again — and they are frozen.
  */
 export function draftOf(state: SimState): SimState {
   return {
@@ -119,6 +149,8 @@ export function draftOf(state: SimState): SimState {
     personnel: state.personnel.map((person) => ({ ...person })),
     jobs: state.jobs.map((job) => ({ ...job })),
     facilities: state.facilities.map((facility) => ({ ...facility })),
+    storage: { ...state.storage },
+    delivery: { ...state.delivery },
   };
 }
 

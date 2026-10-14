@@ -16,23 +16,44 @@ import { emit } from './events';
 import { isPriority, priorityIntent, readPriority, PRIORITY_INTENT_ID } from './priority';
 
 /**
- * The Stage 2 command surface.
+ * The Stage 3 command surface.
  *
- * `ROADMAP.md` §Stage 2 authorises exactly one: *"One simple player intent: a
- * priority order between two competing kinds of work. That is the entire command
- * surface at this stage."* Named-option decisions (`D2`) are Stage 4.
+ * Stage 2 had exactly one: `set_priority` (`ROADMAP.md` §Stage 2: *"That is the
+ * entire command surface at this stage."*) Stage 3 adds one more —
+ * `set_food_target`, the "player-set goals" bullet of `ROADMAP.md` §Stage 3.
+ * The report that would *track* those goals is Stage 4, so the goal is set and
+ * displayed now and reported later.
  *
  * The union being non-empty is the point of the earlier `never`: it made it
- * impossible to write a handler for a system that does not exist yet.
+ * impossible to write a handler for a system that did not exist yet.
  */
 export type Command =
-  | { readonly type: 'set_priority'; readonly value: string };
+  | { readonly type: 'set_priority'; readonly value: string }
+  | { readonly type: 'set_food_target'; readonly value: number };
+
+/** The kitchen cooks while the larder is below this. The default, before any command. */
+export const DEFAULT_FOOD_TARGET = 60;
+
+/** Refuse absurd goals loudly rather than silently clamping them. */
+const MIN_FOOD_TARGET = 0;
+const MAX_FOOD_TARGET = 500;
+
+export function readFoodTarget(draft: SimState): number {
+  const entry = draft.intent.find((i) => i.id === FOOD_TARGET_INTENT_ID);
+  if (entry === undefined) return DEFAULT_FOOD_TARGET;
+  const value = Number(entry.value);
+  return Number.isFinite(value) ? value : DEFAULT_FOOD_TARGET;
+}
+
+export const FOOD_TARGET_INTENT_ID = 'food-target';
 
 /** Narrow an unknown value. Rejection is recorded, never silent (`GAME_DESIGN_BLUEPRINT.md` A4). */
 export function isCommand(value: unknown): value is Command {
   if (typeof value !== 'object' || value === null || !('type' in value)) return false;
-  if ((value as { type: unknown }).type !== 'set_priority') return false;
-  return 'value' in value;
+  const type = (value as { type: unknown }).type;
+  if (type === 'set_priority') return 'value' in value;
+  if (type === 'set_food_target') return 'value' in value;
+  return false;
 }
 
 /**
@@ -66,6 +87,10 @@ export function applyCommands(draft: SimState): void {
       applySetPriority(draft, command.value);
       continue;
     }
+    if (isCommand(command) && command.type === 'set_food_target') {
+      applySetFoodTarget(draft, command.value);
+      continue;
+    }
     emit(draft, {
       type: 'command_rejected',
       tier: 'routine',
@@ -73,6 +98,34 @@ export function applyCommands(draft: SimState): void {
     });
   }
   draft.pendingCommands = [];
+}
+
+function applySetFoodTarget(draft: SimState, value: unknown): void {
+  const target = Number(value);
+  if (!Number.isInteger(target) || target < MIN_FOOD_TARGET || target > MAX_FOOD_TARGET) {
+    emit(draft, {
+      type: 'command_rejected',
+      tier: 'routine',
+      data: {
+        command: `set_food_target:${String(value)}`,
+        reason: `must be a whole number between ${MIN_FOOD_TARGET} and ${MAX_FOOD_TARGET}`,
+      },
+    });
+    return;
+  }
+
+  const from = readFoodTarget(draft);
+  if (from === target) return; // No change is not an event.
+
+  draft.intent = [
+    ...draft.intent.filter((entry) => entry.id !== FOOD_TARGET_INTENT_ID),
+    { id: FOOD_TARGET_INTENT_ID, kind: 'policy', value: target },
+  ];
+  emit(draft, {
+    type: 'food_target_changed',
+    tier: 'routine',
+    data: { from, to: target },
+  });
 }
 
 function applySetPriority(draft: SimState, value: unknown): void {

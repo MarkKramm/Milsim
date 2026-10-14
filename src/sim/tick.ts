@@ -26,6 +26,21 @@ import { facilityById, hasFreeCapacity, occupancy } from './facilities';
 import type { Facility } from './facilities';
 import { readPriority, resolvePriority } from './priority';
 import type { Priority } from './priority';
+import { runDeliveries } from './delivery';
+import { consume, produce } from './storage';
+import { MEALS_PER_BATCH, SUPPLIES_PER_REPAIR, UNSUPPLIED_REPAIR_MULTIPLIER } from './resources';
+import {
+
+  beginRecovery,
+  isResting,
+  isTooExhaustedToWork,
+  shouldRest,
+  tryEat,
+  updateNeeds,
+  wantsFood,
+  workRate,
+} from './needs';
+import { readFoodTarget } from './commands';
 
 const WORK_ORDER_QUEUED = 'work_order_queued';
 const TASK_STARTED = 'task_started';
@@ -68,10 +83,37 @@ export function tick(state: SimState): SimState {
   const priority = readPriority(next.intent);
   const priorityOrder = resolvePriority(next.intent, next.jobs);
 
-  // Phase 1 (Facilities) is absent at Stage 2: capacity is static, so there is
-  // nothing for Facilities to write. It arrives at Stage 7 with item condition.
+  // Phase 1 (Facilities) is absent at Stage 2 and remains absent at Stage 3:
+  // capacity is still static. It arrives at Stage 7 with item condition.
 
-  // Step 5 — work arrives (phase 5). Consumes no randomness.
+  // Phase 2 — DELIVERY. Supplies land before anything consumes them, because a
+  // scheduled arrival is a fact that already happened (`SYSTEM_DEPENDENCIES.md`
+  // §4). Doing it the other way round would let someone go hungry while food was
+  // already on the dock.
+  runDeliveries(next);
+
+  // Phase 3 — RESOURCES. Consumption and production against storage. The kitchen
+  // raises meal work only when the larder is below the player's target.
+  runResourceRules(next);
+
+  // Phase 4 — NEEDS. Hunger and fatigue move *before* selection, so a worker
+  // decides on current condition rather than last tick's (invariant 19, and the
+  // ordering argument in `SYSTEM_DEPENDENCIES.md` §6).
+  for (let i = 0; i < next.personnel.length; i += 1) updateNeeds(next, i);
+
+  // Eating is an *instant* action, not an activity: it takes no duration, so it
+  // does not compete with work or rest. It sits here, before selection, and is
+  // deliberately NOT gated on being idle — a base with a full larder whose
+  // workers never stop working would otherwise starve on principle, which was
+  // exactly what the first measurement showed: 5 of 7 hungry beside 43 meals.
+  for (let i = 0; i < next.personnel.length; i += 1) {
+    const person = next.personnel[i];
+    if (person === undefined) continue;
+    if (!wantsFood(person)) continue;
+    tryEat(next, i);
+  }
+
+  // Phase 5 — work arrives, then selection, then progress.
   runArrivals(next.jobs, next.tick, (jobId, pending) => {
     emit(next, {
       type: WORK_ORDER_QUEUED,
@@ -81,13 +123,55 @@ export function tick(state: SimState): SimState {
     });
   });
 
-  // Step 6 — job selection (phase 5). Ascending id, never random (B3 §3).
   selectWork(next, priorityOrder, priority);
 
-  // Step 7 — advance job progress (phase 5). Completes in the same tick.
   advanceWork(next);
 
   return next;
+}
+
+// ── Phase 3 — production and consumption ─────────────────────────────────────
+
+/**
+ * Raise meal work whenever the larder is below the player's target.
+ *
+ * **This is a threshold, not a cap.** Food already in storage is never deleted to
+ * bring the number down to target; the kitchen simply stops cooking while the
+ * larder is full enough. Deleting valid stock would make a number look tidy and
+ * the world a lie.
+ *
+ * The queue is deliberately allowed to grow. An earlier version queued at most
+ * one order at a time, which silently capped the kitchen at one job per 30 ticks
+ * — 48 orders a day — no matter how many people needed feeding. The larder then
+ * drained and the priority control had nothing to arbitrate, because meals could
+ * never fall behind. The depth of the queue *is* the visible size of the
+ * shortfall.
+ */
+function runResourceRules(draft: SimState): void {
+  const target = readFoodTarget(draft);
+  const meals = draft.jobs.find((job) => job.id === 'meals');
+  if (meals === undefined) return;
+  if (draft.storage.food >= target) return;
+
+  // The order book is the **shortfall**, not a running tally. Two earlier
+  // versions got this wrong in opposite directions: queueing only when empty
+  // capped the kitchen at one job per 30 ticks, and queueing unconditionally
+  // added an order every tick — which, once the kitchen fell behind, produced a
+  // 4,106-deep queue over five days and buried the log in 4,593 events.
+  //
+  // Counting orders already raised against the shortfall bounds the queue by
+  // construction: it cannot outgrow the gap it exists to close, and it shrinks
+  // again as soon as food arrives.
+  const promised = draft.storage.food + meals.pending;
+  if (promised >= target) return;
+
+  meals.pending += 1;
+  emit(draft, {
+    type: WORK_ORDER_QUEUED,
+    tier: 'routine',
+    subjects: ['meals'],
+    data: { pending: meals.pending, reason: `larder below target ${target}` },
+  });
 }
 
 // ── Phase 5 — selection ──────────────────────────────────────────────────────
@@ -109,6 +193,21 @@ function selectWork(draft: SimState, priorityOrder: readonly JobId[], priority: 
   for (let i = 0; i < draft.personnel.length; i += 1) {
     const person = draft.personnel[i];
     if (person === undefined || person.currentTask !== null) continue;
+
+    // Rule 2 — recovery, which B3 §3 places ABOVE duties. Fatigue preempts work
+    // rather than competing with it, which is why a tired base stops producing.
+    if (shouldRest(person, draft.tick)) {
+      draft.personnel[i] = beginRecovery(person, draft.tick);
+      continue;
+    }
+    if (isResting(person, draft.tick)) continue;
+
+    // Ladder step 3 — decline demanding work. The person still eats and still
+    // rests; they simply will not take on more. The `needs_decline` event was
+    // already emitted by `updateNeeds` at the moment fatigue crossed the
+    // threshold, so no second event is produced here — the player is told once,
+    // not nagged every tick, and the roster explains the standing-by reason.
+    if (isTooExhaustedToWork(person)) continue;
 
     const claim = chooseClaim(
       person,
@@ -216,6 +315,11 @@ function jobIndex(jobs: readonly Job[]): Map<JobId, Job> {
  *
  * Completion decrements **nothing** — `pending` was already spent when the order
  * was claimed.
+ *
+ * Two things happen on completion. A meal order adds food to storage. A
+ * maintenance order takes one supply, and if there were none it still finishes —
+ * it simply takes twice as long to get there (see `resources.ts` for why a
+ * shortage is a cost rather than a gate).
  */
 function advanceWork(draft: SimState): void {
   for (let i = 0; i < draft.personnel.length; i += 1) {
@@ -226,18 +330,58 @@ function advanceWork(draft: SimState): void {
     const job = draft.jobs.find((candidate) => candidate.id === task.jobId);
     if (job === undefined) continue;
 
+    // Ladder step 2 — a tired worker moves less far through the job each tick.
+    // Implemented as a skipped progress tick rather than a changed duration, so
+    // the duration constant stays a property of the job and not of the worker.
+    if (workRate(person) < 1 && draft.tick % 2 === 1) continue;
+
     draft.personnel[i] = advanceTask(person);
-    if (task.progressTicks + 1 < job.durationTicks) continue;
+
+    const required = durationFor(job, draft.storage.supplies);
+    if (task.progressTicks + 1 < required) continue;
+
+    if (job.id === 'meals') {
+      draft.storage = produce(draft.storage, 'food', MEALS_PER_BATCH);
+    } else {
+      const taken = consume(draft.storage, 'supplies', SUPPLIES_PER_REPAIR);
+      if (taken.ok) {
+        draft.storage = taken.storage;
+      } else {
+        // Explicitly recorded, never silent: the work is done, but improvised
+        // without consumables, which is why it took twice as long.
+        emit(draft, {
+          type: 'supplies_short',
+          tier: 'notable',
+          subjects: [person.id, job.id],
+          data: { supplies: draft.storage.supplies, reason: taken.reason ?? 'none held' },
+        });
+      }
+    }
 
     emit(draft, {
       type: TASK_COMPLETED,
       tier: 'notable',
       subjects: [person.id, task.jobId],
       causeEventIds: [task.startedEventId],
-      data: { ticks: job.durationTicks },
+      data: { ticks: required },
     });
     draft.personnel[i] = completeTask(person, draft.tick);
   }
+}
+
+/**
+ * How long this job takes given what is in stock.
+ *
+ * Maintenance without supplies takes `UNSUPPLIED_REPAIR_MULTIPLIER` times as
+ * long. The work still completes: a repair crew working without consumables does
+ * an improvised job, and the backlog grows accordingly — which is a consequence
+ * rather than a cliff, and keeps every created job finishable.
+ */
+function durationFor(job: Job, supplies: number): number {
+  if (job.id === 'maintenance' && supplies < SUPPLIES_PER_REPAIR) {
+    return job.durationTicks * UNSUPPLIED_REPAIR_MULTIPLIER;
+  }
+  return job.durationTicks;
 }
 
 // ── Derived, for display only ────────────────────────────────────────────────
@@ -264,8 +408,15 @@ export function standbyReason(
   jobs: readonly Job[],
   facilities: readonly Facility[],
   personnel: readonly Person[],
+  tick: number,
 ): string {
   const eligible = jobs.filter((job) => isEligible(job, person.role));
+
+  // Ladder step 3 — the person has refused work, and says so.
+  if (isTooExhaustedToWork(person)) return 'too exhausted to work';
+
+  // Resting is a state the roster shows, not a reason to justify.
+  if (isResting(person, tick)) return 'resting — off duty';
 
   // Capacity is the only reason an eligible worker cannot start despite work
   // waiting. Report the facility, because "why is nobody on meals?" is answered

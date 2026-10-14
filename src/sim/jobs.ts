@@ -26,8 +26,17 @@ export interface Job {
   /** Fixture: 90 minutes maintenance, 30 minutes meal preparation. */
   readonly durationTicks: number;
   readonly eligibleRoles: readonly Role[];
-  /** Demand cadence. No jitter — see `STAGE2_MASTER_PLAN.md` §5.2. */
-  readonly arrivalIntervalTicks: number;
+  /**
+   * Fixed cadence, or `null` for a **need-driven** job.
+   *
+   * Stage 2 gave meal preparation a fixed 8-tick arrival. Stage 3 replaces it with
+   * production driven by the kitchen's target stock, because with arrivals on a
+   * timer the larder fills without limit and hunger becomes decoration — the need
+   * would be a bar that never does anything. Maintenance keeps a fixed cadence:
+   * upkeep is not consumption, and modelling what makes maintenance *necessary*
+   * belongs to Stage 7's item condition, not here.
+   */
+  readonly arrivalIntervalTicks: number | null;
   /** Jobs owns this. */
   nextArrivalTick: number;
   /**
@@ -43,12 +52,10 @@ export interface Job {
 /**
  * The Stage 2 job table.
  *
- * The arrival intervals are the two numbers that carry the whole balance. They
- * are derived in `STAGE2_MASTER_PLAN.md` §4A.3 from the service ceilings below:
- * each job's demand sits just *under* its own facility's ceiling (so neither job
- * can be starved permanently), while the pair together exceeds the workforce (so
- * priority is a real allocation choice). Changing these two constants is the only
- * lever a reviewer needs.
+ * `arrivalIntervalTicks: null` on meal preparation is the only Stage 3 change here;
+ * everything else is the Stage 2 fixture, preserved. See `DEFAULT_FOOD_TARGET` in
+ * `commands.ts` for the stock level the kitchen works to, and
+ * `RESOURCES_PER_REPAIR` in `resources.ts` for the supply cost.
  */
 export const JOB_TABLE: readonly Omit<Job, 'nextArrivalTick' | 'pending'>[] = [
   {
@@ -57,7 +64,7 @@ export const JOB_TABLE: readonly Omit<Job, 'nextArrivalTick' | 'pending'>[] = [
     facilityId: 'workshop',
     durationTicks: 90,
     eligibleRoles: ['maintenance', 'generalist'],
-    arrivalIntervalTicks: 24,
+    arrivalIntervalTicks: 20,
   },
   {
     id: 'meals',
@@ -65,7 +72,7 @@ export const JOB_TABLE: readonly Omit<Job, 'nextArrivalTick' | 'pending'>[] = [
     facilityId: 'kitchen',
     durationTicks: 30,
     eligibleRoles: ['supply', 'generalist'],
-    arrivalIntervalTicks: 8,
+    arrivalIntervalTicks: null, // need-driven
   },
 ];
 
@@ -95,6 +102,9 @@ export function runArrivals(
   onArrive: (jobId: JobId, pending: number) => void,
 ): void {
   for (const job of jobs) {
+    // A need-driven job has no calendar; its demand is raised by phase 3 when
+    // the kitchen finds the larder below target.
+    if (job.arrivalIntervalTicks === null) continue;
     if (tick < job.nextArrivalTick) continue;
     const wasEmpty = job.pending === 0;
     job.pending += 1;
@@ -143,5 +153,5 @@ export function dailyServiceCeiling(facilityCapacity: number, durationTicks: num
 
 /** Orders of this job a run receives per day at the configured cadence. */
 export function dailyArrivals(job: Pick<Job, 'arrivalIntervalTicks'>): number {
-  return TICKS_PER_DAY / job.arrivalIntervalTicks;
+  return job.arrivalIntervalTicks === null ? 0 : TICKS_PER_DAY / job.arrivalIntervalTicks;
 }

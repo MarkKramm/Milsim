@@ -124,15 +124,52 @@ Both would have been invisible in review and would have looked like "slow tests"
   person — hundreds of thousands of log entries, which was what wedged the test
   runner. It is now reported once per hunger cycle. A five-day log is 2,707 events.
 
+### Verified by hand — the developer played it on an Android phone
+
+The developer opened the running app on their phone and observed:
+
+- The mobile interface was **readable**, and the per-person hunger and fatigue
+  bars were visible.
+- Personnel **rested at similar times at first**, then developed **staggered rest
+  patterns over several days** — the emergence the stage was meant to produce,
+  arriving on its own rather than being scheduled.
+- In **Balanced**, food **began dropping around day 10**, and the developer
+  **switched to Meals first** to recover it.
+
+These are encouraging signs that the simulation is becoming engaging. They are
+recorded as **manual observation of the Stage 3 experience**, not as proof that
+every formal acceptance criterion was met.
+
 ### Still to verify by hand
 
 - **The Stage 1 phone gate** — never performed.
-- **The Stage 2 Day 4–5 gate** — never performed.
-- **The Stage 3 phone gate** — never performed. This is the one that matters:
-  the question is whether watching a base rest, go hungry and recover from a bad
-  call is more interesting than watching it work nonstop. Automated tests cannot
-  answer it.
-- Roster and need bars at phone width.
+- **The Stage 2 Day 4–5 gate** — never performed. Neither is discharged by the
+  Stage 3 observation above; both are separate checks with their own questions.
+- **Stage 3's formal gate** — the observation above is real evidence, but the
+  formal question is whether the answer to *"would you keep watching?"* is a
+  yes, and that has not been put to a cold player.
+- The roster and need bars have now been seen on one phone at one width. Other
+  widths, and the Day 4–5 report, remain unexamined.
+
+### Fixed after the final acceptance audit
+
+**The readiness card could contradict the roster beside it.** `readinessCauses()`
+hard-coded `0.5` for both needs and never consulted `restUntilTick`, so it could
+report *"everyone fed and rested"* in two situations where that was not true:
+
+- while someone was **asleep** — someone resting is by definition not yet
+  rested. Measured against the old predicate over three settings and 4,320 ticks,
+  this happened in **3,718 frames**. One screenshot showed one instance of a
+  constant problem.
+- while someone was **eating** — the literal 0.5 ignored the band between
+  `HUNGER_EAT_THRESHOLD` (0.4) and 0.5, so a person actively eating a meal was
+  not counted as hungry. Observed in 7 frames.
+
+The thresholds now come from the model's own constants, resting is reported as its
+own state, and the fallback is the neutral **"No immediate concerns"**. **The
+readiness calculation is untouched** — `conditionOf` and `baseReadiness` are
+unchanged, and a test pins both. Four regression tests added, all verified to
+fail against the previous predicate before being fixed.
 
 ## [0.2.0] — Stage 2: autonomous jobs and first intent
 

@@ -35,10 +35,15 @@ import {
 
 
 
+  isResting,
   isTooExhaustedToWork,
   wantsFood,
+  HUNGER_EAT_THRESHOLD,
+  DECLINE_THRESHOLD,
 } from './needs';
 import { TICKS_PER_DAY } from './time';
+import { baseReadiness, conditionOf, readinessCauses } from './readiness';
+import type { Person } from './personnel';
 import { DEFAULT_SEED } from './rng';
 
 const HORIZON = TICKS_PER_DAY * 5; // 7,200 ticks
@@ -485,4 +490,98 @@ test('reproduces the measured Stage 3 five-day figures', () => {
     assert.equal(r.mealsBacklog, kBacklog, `${setting}: meal backlog`);
     assert.equal(r.food, food, `${setting}: food remaining`);
   }
+});
+// ── Regression tests from the Stage 3 final acceptance audit ─────────────────
+
+/**
+ * The readiness card must never contradict the roster beside it.
+ *
+ * Both cases below were found by playing, not by reading: the developer saw
+ * "everyone fed and rested" on a phone screenshot while people were asleep.
+ * The old version hard-coded 0.5 for both needs and never consulted
+ * `restUntilTick`, so it could say two things that were not true.
+ */
+test('the readiness summary never claims rest while someone is resting', () => {
+  for (const setting of ['balanced', 'maintenance-first', 'meals-first'] as const) {
+    let state = run(
+      enqueue(createRun(4242), { type: 'set_priority', value: setting }),
+      4320,
+    );
+    for (let i = 0; i < 1500; i += 1) {
+      state = run(state, 1);
+      const resting = state.personnel.some((p) => isResting(p, state.tick));
+      const causes = readinessCauses(state.personnel, state.tick);
+      assert.ok(
+        !causes.some((c) => /rested/.test(c)),
+        `${setting}@${state.tick}: claimed "rested" while someone is asleep — ${causes}`,
+      );
+      if (resting) {
+        assert.ok(
+          causes.some((c) => c.includes('resting')),
+          `${setting}@${state.tick}: someone is resting but the cause list omits it`,
+        );
+      }
+    }
+  }
+});
+
+test('the readiness summary counts anyone who is eating, not only the badly hungry', () => {
+  // A person between HUNGER_EAT_THRESHOLD and 0.5 is actively eating. The old
+  // literal 0.5 missed that band entirely, so the card could read "everyone fed
+  // and rested" while a meal was being eaten — reproduced at tick 4,314.
+  let checked = 0;
+  for (const setting of ['balanced', 'maintenance-first'] as const) {
+    let state = run(
+      enqueue(createRun(20260101), { type: 'set_priority', value: setting }),
+      0,
+    );
+    for (let i = 0; i < 7200 && checked < 3; i += 1) {
+      state = run(state, 1);
+      const eating = state.personnel.some((p) => p.needs.hunger >= HUNGER_EAT_THRESHOLD);
+      const calm = readinessCauses(state.personnel, state.tick).some((c) => c === 'No immediate concerns');
+      assert.ok(
+        !(eating && calm),
+        `${setting}@${state.tick}: reported calm while someone was hungry enough to eat`,
+      );
+      if (eating) checked += 1;
+    }
+  }
+  assert.ok(checked > 0, 'the test should have observed people eating at least once');
+});
+
+test('the readiness causes use the model thresholds, not private numbers', () => {
+  // If someone retunes a need constant, the summary must follow it rather than
+  // silently disagreeing with the behaviour it is describing.
+  const person = { hunger: HUNGER_EAT_THRESHOLD, fatigue: 0 } as const;
+  const justBelow = { hunger: HUNGER_EAT_THRESHOLD - 0.01, fatigue: 0 } as const;
+
+  const make = (needs: { hunger: number; fatigue: number }): Person =>
+    ({ id: 'x', name: 'X', role: 'generalist', currentTask: null, history: [], restUntilTick: null, needs } as unknown as Person);
+
+  assert.ok(
+    readinessCauses([make(person)], 0).some((c) => c.includes('hungry')),
+    'at the eat threshold the person counts as hungry',
+  );
+  assert.ok(
+    !readinessCauses([make(justBelow)], 0).some((c) => c.includes('hungry')),
+    'just below it they do not',
+  );
+
+  const tired = { hunger: 0, fatigue: DECLINE_THRESHOLD } as const;
+  assert.ok(
+    readinessCauses([make(tired)], 0).some((c) => c.includes('exhausted')),
+    'at the decline threshold the person counts as exhausted',
+  );
+});
+
+test('readiness calculations themselves are unchanged by the wording fix', () => {
+  // The audit required the wording be corrected *without* touching the maths.
+  // Readiness is the mean of per-person condition, 1 - (0.5*hunger + 0.5*fatigue).
+  const person = { hunger: 0.25, fatigue: 0.5 } as const;
+  const make = (needs: { hunger: number; fatigue: number }): Person =>
+    ({ id: 'x', name: 'X', role: 'generalist', currentTask: null, history: [], restUntilTick: null, needs } as unknown as Person);
+
+  assert.equal(conditionOf(person), 1 - (0.5 * 0.25 + 0.5 * 0.5));
+  assert.equal(baseReadiness([make(person), make(person)]), conditionOf(person));
+  assert.equal(baseReadiness([]), 1);
 });

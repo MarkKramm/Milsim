@@ -212,7 +212,7 @@ export function runHeadless(options: HeadlessOptions): HeadlessSummary {
     supplies: state.storage.supplies,
     foodTarget: readFoodTarget(state),
     readiness: baseReadiness(state.personnel),
-    readinessCauses: readinessCauses(state.personnel),
+    readinessCauses: readinessCauses(state.personnel, state.tick),
     personnel: state.personnel.map((person) => {
       const task = person.currentTask;
       const resting = isResting(person, state.tick);

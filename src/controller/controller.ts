@@ -171,7 +171,7 @@ export class Controller {
       supplies: this.state.storage.supplies,
       foodTarget: readFoodTarget(this.state),
       readiness: baseReadiness(this.state.personnel),
-      readinessCauses: readinessCauses(this.state.personnel),
+      readinessCauses: readinessCauses(this.state.personnel, this.state.tick),
       roster: this.roster(),
       facilities: this.state.facilities.map((facility) => ({
         id: facility.id,

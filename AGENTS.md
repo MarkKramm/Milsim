@@ -18,21 +18,32 @@ they are synced, and when each must be updated.
 
 | | |
 |---|---|
-| **Phase** | Stage 3 built; **its manual gate is not yet passed** |
-| **Code** | `src/sim` (pure), `src/controller`, `src/ui`, `tools/headless.ts`, **128 tests** |
+| **Phase** | Stage 3 built; **played on the phone, formal gate still open** |
+| **Code** | `src/sim` (pure), `src/controller`, `src/ui`, `tools/headless.ts`, **132 tests** |
 | **Git** | Private remote at `github.com/MarkKramm/Milsim`; `docs` and `ci` workflows green |
-| **Next action** | Run the **Stage 3 phone gate**: does a base that rests, starves and recovers from a bad call hold attention better than one that works nonstop? |
-| **Blocked on** | Nothing technical. The outstanding item is human observation |
+| **Next action** | Put Stage 3 to a cold player: is a base that rests, starves and recovers actually worth watching past day 4? |
+| **Blocked on** | Nothing technical |
+
+**Manually observed on the developer's Android phone:** the interface was
+readable, hunger and fatigue bars were visible, rest patterns started uniform
+and became **staggered over several days**, and in Balanced the larder began
+falling around **day 10**, prompting a switch to Meals first to recover it.
+
+That is encouraging and it is **not** the same as passing the stage. The formal
+gate asks whether a *cold* player keeps watching, and Stage 1's phone gate and
+the Stage 2 Day 4–5 gate remain unperformed. All three are listed as outstanding
+in `CHANGELOG.md`.
 
 **What is built:** seven people who work, rest, get hungry and get tired; a
 larder that can empty; a workshop that can fall behind; one priority control and
 one larder target. See `CHANGELOG.md` for what changed and why.
 
-**Three manual gates are outstanding** — Stage 1's phone check, the Stage 2
-Day 4–5 check, and Stage 3's phone check. None has been performed, and no
-automated test substitutes for any of them. The Stage 1 audit's finding stands:
-a green suite establishes that the tests it contains pass, not that the game is
-worth playing.
+**Three manual gates remain formally open** — Stage 1's phone check, the Stage 2
+Day 4–5 check, and the Stage 3 question of whether a *cold* player keeps watching.
+Stage 3 has been played on a phone (see the checkpoint above) and that is real
+evidence, but it is not the same question. No automated test substitutes for any
+of them. The Stage 1 audit's finding stands: a green suite establishes that the
+tests it contains pass, not that the game is worth playing.
 
 Reproduce Stage 3 without a browser:
 
